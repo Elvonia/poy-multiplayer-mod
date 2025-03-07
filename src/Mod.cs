@@ -55,10 +55,11 @@ public class Mod : MelonMod
 
         player = new Player();
 
-        /*if (currentLobbyID.IsValid())
+        if (currentLobbyID.IsValid())
         {
-            SpawnPlayerShadows();
-        }*/
+            //SpawnPlayerShadows();
+        }
+        SetShadowMaterial(Color.blue);
     }
 
     public override void OnSceneWasUnloaded(int buildIndex, string sceneName)
@@ -268,9 +269,22 @@ public class Mod : MelonMod
 
             if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out bytesRead, out senderID))
             {
-                SetPlayerDataFromBytes(buffer);
+                //SetPlayerDataFromBytes(buffer);
                 Debug.Log($"Received player data from {senderID} and applied it.");
             }
+        }
+    }
+
+    public void SetShadowMaterial(Color color)
+    {
+        GameObject shadow = GameObject.FindObjectOfType<PlayerShadow>().gameObject;
+        SkinnedMeshRenderer[] meshRenderers = shadow.GetComponentsInChildren<SkinnedMeshRenderer>();
+
+        foreach (SkinnedMeshRenderer renderer in meshRenderers)
+        {
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            renderer.material = new Material(Shader.Find("Standard"));
+            renderer.material.color = color;
         }
     }
 

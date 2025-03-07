@@ -52,14 +52,6 @@ namespace CoopMod
                 writer.Write(rightHand.y);
                 writer.Write(rightHand.z);
 
-                writer.Write(leftKnee.x);
-                writer.Write(leftKnee.y);
-                writer.Write(leftKnee.z);
-
-                writer.Write(rightKnee.x);
-                writer.Write(rightKnee.y);
-                writer.Write(rightKnee.z);
-
                 writer.Write(leftFoot.x);
                 writer.Write(leftFoot.y);
                 writer.Write(leftFoot.z);
