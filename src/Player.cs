@@ -1,5 +1,4 @@
-﻿using MelonLoader;
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 
 namespace CoopMod

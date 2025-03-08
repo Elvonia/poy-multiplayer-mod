@@ -1,10 +1,46 @@
-using MelonLoader;
 using Steamworks;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
+#if BEPINEX
+using BepInEx;
+
+namespace CoopMod
+{
+    [BepInPlugin("com.github.Elvonia.poy-coop-mod", "Coop Mod", PluginInfo.PLUGIN_VERSION)]
+    public class Plugin : BaseUnityPlugin {
+        public void Awake() {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+        
+            CommonAwake();
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            CommonSceneLoad(scene.buildIndex);
+        }
+
+        private void OnSceneUnloaded(Scene scene)
+        {
+            CommonSceneUnload();
+        }
+
+        public void Update()
+        {
+            CommonUpdate();
+        }
+
+        public void FixedUpdate()
+        {
+            CommonFixedUpdate();
+        }
+
+#elif MELONLOADER
+using MelonLoader;
 
 [assembly: MelonInfo(typeof(CoopMod.Mod), "Coop Mod", PluginInfo.PLUGIN_VERSION, "Kalico")]
 [assembly: MelonGame("TraipseWare", "Peaks of Yore")]
@@ -13,77 +49,101 @@ namespace CoopMod
 {
     public class Mod : MelonMod
     {
-        private CSteamID currentLobbyID;
+        public override void OnInitializeMelon()
+        {
+            CommonAwake();
+        }
 
-        private Callback<GameLobbyJoinRequested_t> lobbyJoinRequestedCallback;
-        private Callback<LobbyCreated_t> lobbyCreatedCallback;
-        private Callback<LobbyEnter_t> lobbyEnterCallback;
-        private Callback<LobbyChatUpdate_t> lobbyChatUpdateCallback;
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        {
+            CommonSceneLoad(buildIndex);
+        }
+
+        public override void OnSceneWasUnloaded(int buildIndex, string sceneName)
+        {
+            CommonSceneUnload();
+        }
+
+        public override void OnUpdate()
+        {
+            CommonUpdate();
+        }
+
+        public override void OnFixedUpdate()
+        {
+            CommonFixedUpdate();
+        }
+#endif
+        private CSteamID currentLobbyID;
 
         private GameObject uiCanvas;
         private Text uiText;
 
         private Player player;
         private GameObject playerShadow;
+
         private List<Shadow> remotePlayers = new List<Shadow>();
 
-        public override void OnInitializeMelon()
+        public void CommonAwake()
         {
             if (!SteamAPI.Init())
             {
-                MelonLogger.Msg("Steam API failed to initialize!");
                 return;
             }
 
-            MelonLogger.Msg("Steam API initialized. Your Steam ID: " + SteamUser.GetSteamID());
-
             StealPlayerShadow();
 
-            lobbyCreatedCallback = Callback<LobbyCreated_t>.Create(OnLobbyCreated);
-            lobbyEnterCallback = Callback<LobbyEnter_t>.Create(OnLobbyJoined);
-            lobbyJoinRequestedCallback = Callback<GameLobbyJoinRequested_t>.Create(OnFriendJoined);
-            lobbyChatUpdateCallback = Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdated);
+            Callback<LobbyCreated_t>.Create(OnLobbyCreated);
+            Callback<LobbyEnter_t>.Create(OnLobbyJoined);
+            Callback<GameLobbyJoinRequested_t>.Create(OnFriendJoined);
+            Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdated);
 
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePrivate, 2);
         }
 
-        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+        public void CommonSceneLoad(int buildIndex)
         {
             SetupUI();
             UpdateLobbyUI();
 
-            if (buildIndex == 0 || buildIndex == 1 
+            if (buildIndex == 0 || buildIndex == 1
                 || buildIndex == 37 || buildIndex == 67)
             {
                 return;
             }
-            player = new Player();
 
-            if (currentLobbyID.IsValid())
-            {
-                SpawnPlayerShadows();
-            }
-            
+            player = new Player();
         }
 
-        public override void OnSceneWasUnloaded(int buildIndex, string sceneName)
+        public void CommonSceneUnload()
         {
             player = null;
             remotePlayers.Clear();
-
             uiCanvas = null;
             uiText = null;
         }
 
-        public override void OnUpdate()
+        public void CommonUpdate()
         {
             if (Input.GetKeyDown(KeyCode.F1))
             {
                 OpenSteamFriendsList();
             }
+
+            if(Input.GetKeyDown(KeyCode.F2))
+            {
+                if (uiCanvas.activeSelf)
+                {
+                    uiCanvas.SetActive(false);
+                }
+                else
+                {
+                    uiCanvas.SetActive(true);
+                }
+            }
         }
 
-        public override void OnFixedUpdate()
+        public void CommonFixedUpdate()
         {
             if (player != null)
             {
@@ -94,6 +154,7 @@ namespace CoopMod
             ReceivePlayerTransforms();
         }
 
+        #region UI
         private void SetupUI()
         {
             if (uiCanvas != null) return;
@@ -142,18 +203,26 @@ namespace CoopMod
             UpdateUI(playerList);
         }
 
+        private void OpenSteamFriendsList()
+        {
+            if (currentLobbyID.IsValid())
+            {
+                SteamFriends.ActivateGameOverlayInviteDialog(currentLobbyID);
+            }
+            else
+            {
+                SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 2);
+            }
+        }
+        #endregion
+
+        #region Lobby Callbacks
         private void OnLobbyCreated(LobbyCreated_t callback)
         {
             if (callback.m_eResult == EResult.k_EResultOK)
             {
                 currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
                 UpdateLobbyUI();
-
-                MelonLogger.Msg($"Lobby created! Lobby ID: {currentLobbyID}");
-            }
-            else
-            {
-                MelonLogger.Msg("Failed to create Steam lobby.");
             }
         }
 
@@ -161,8 +230,6 @@ namespace CoopMod
         {
             currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
             UpdateLobbyUI();
-
-            MelonLogger.Msg($"Joined lobby {currentLobbyID}");
         }
 
         private void OnFriendJoined(GameLobbyJoinRequested_t callback)
@@ -170,8 +237,6 @@ namespace CoopMod
             CSteamID friendID = callback.m_steamIDFriend;
             currentLobbyID = callback.m_steamIDLobby;
             SteamMatchmaking.JoinLobby(currentLobbyID);
-
-            MelonLogger.Msg($"Friend {friendID} accepted the invite. Joining lobby {currentLobbyID}");
         }
 
         private void OnLobbyChatUpdated(LobbyChatUpdate_t callback)
@@ -181,20 +246,9 @@ namespace CoopMod
                 UpdateLobbyUI();
             }
         }
+        #endregion
 
-        private void OpenSteamFriendsList()
-        {
-            if (currentLobbyID.IsValid())
-            {
-                SteamFriends.ActivateGameOverlayInviteDialog(currentLobbyID);
-            }
-            else
-            {
-                MelonLogger.Msg("No active lobby found. Creating one...");
-                SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 2);
-            }
-        }
-
+        #region PlayerShadow Duplication
         private void StealPlayerShadow()
         {
             SceneManager.LoadSceneAsync(2, LoadSceneMode.Additive).completed += (operation) =>
@@ -203,7 +257,6 @@ namespace CoopMod
 
                 if (foundShadow == null)
                 {
-                    MelonLogger.Msg("PlayerShadow not found");
                     UnloadStolenScene();
                     return;
                 }
@@ -216,7 +269,6 @@ namespace CoopMod
 
                 playerShadow.SetActive(false);
 
-                MelonLogger.Msg("Successfully stole PlayerShadow");
                 UnloadStolenScene();
             };
         }
@@ -225,7 +277,6 @@ namespace CoopMod
         {
             SceneManager.UnloadSceneAsync(2).completed += (operation) =>
             {
-                MelonLogger.Msg("Scene unloaded.");
                 ReloadTitleMenu();
             };
         }
@@ -234,7 +285,9 @@ namespace CoopMod
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
+        #endregion
 
+        #region Send + Receive Player Transforms
         private void SendPlayerTransforms()
         {
             if (!currentLobbyID.IsValid()) return;
@@ -263,24 +316,19 @@ namespace CoopMod
 
                 if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out bytesRead, out senderID))
                 {
-                    Shadow shadow = remotePlayers.Find(p => p.GetSteamID() == senderID);
+                    Shadow shadow = remotePlayers.Find(s => s.GetSteamID() == senderID);
+
                     if (shadow == null)
                     {
                         shadow = new Shadow(senderID, playerShadow);
                         remotePlayers.Add(shadow);
                     }
+
                     shadow.SetShadowDataFromBytes(buffer);
                     shadow.UpdateShadowTransforms();
                 }
             }
         }
-
-        private void SpawnPlayerShadows()
-        {
-            foreach (Shadow shadow in remotePlayers)
-            {
-                shadow.UpdateShadowTransforms();
-            }
-        }
+        #endregion
     }
 }
