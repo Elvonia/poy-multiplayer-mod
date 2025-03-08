@@ -98,7 +98,7 @@ namespace CoopMod
             Callback<GameLobbyJoinRequested_t>.Create(OnFriendJoined);
             Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdated);
 
-            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePrivate, 2);
+            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
         }
 
         public void CommonSceneLoad(int buildIndex)
