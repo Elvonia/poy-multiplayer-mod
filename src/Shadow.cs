@@ -35,8 +35,13 @@ namespace CoopMod
         private Vector3 leftFootBendPos = Vector3.zero;
         private Vector3 rightFootBendPos = Vector3.zero;
 
-        private float leftArmStretch;
-        private float rightArmStretch;
+        private Quaternion leftHandRot = Quaternion.identity;
+        private Quaternion rightHandRot = Quaternion.identity;
+        private Quaternion leftFootRot = Quaternion.identity;
+        private Quaternion rightFootRot = Quaternion.identity;
+
+        private float leftArmStretch = 1f;
+        private float rightArmStretch = 1f;
 
 
         public Shadow(CSteamID steamID, GameObject shadow)
@@ -44,20 +49,36 @@ namespace CoopMod
             this.steamID = steamID;
             this.shadow = shadow;
 
-            player = new GameObject("MP_Player");
-            Object.Instantiate(player);
+            player = Object.Instantiate(shadow);
+            player.name = $"PlayerClone_{steamID}";
+            player.SetActive(true);
 
             position = shadow.transform.position;
             rotation = shadow.transform.rotation;
 
             leftHand = new GameObject("LeftHand");
+            leftHand.transform.SetParent(player.transform);
+
             rightHand = new GameObject("RightHand");
+            rightHand.transform.SetParent(player.transform);
 
             leftFoot = new GameObject("LeftFoot");
+            leftFoot.transform.SetParent(player.transform);
+
             rightFoot = new GameObject("RightFoot");
+            rightFoot.transform.SetParent(player.transform);
 
             leftFootBend = new GameObject("LeftFootBend");
+            leftFootBend.transform.SetParent(player.transform);
+
             rightFootBend = new GameObject("RightFootBend");
+            rightFootBend.transform.SetParent(player.transform);
+
+            leftHandIK = player.transform.GetChild(6).GetComponent<ArmIK>();
+            rightHandIK = player.transform.GetChild(7).GetComponent<ArmIK>();
+
+            leftFootIK = player.transform.GetChild(4).GetComponent<LimbIK>();
+            rightFootIK = player.transform.GetChild(5).GetComponent<LimbIK>();
 
             leftHandIK.solver.arm.target = leftHand.transform;
             rightHandIK.solver.arm.target = rightHand.transform;
@@ -67,6 +88,9 @@ namespace CoopMod
 
             leftFootIK.solver.bendGoal = leftFootBend.transform;
             rightFootIK.solver.bendGoal = rightFootBend.transform;
+
+            leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
+            rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
 
             leftHandIK.fixTransforms = true;
             rightHandIK.fixTransforms = true;
@@ -91,17 +115,23 @@ namespace CoopMod
                 leftFootPos = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                 rightFootPos = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
+                leftFootBendPos = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                rightFootBendPos = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+
+                leftHandRot = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                rightHandRot = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+
+                leftFootRot = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                rightFootRot = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+
                 leftArmStretch = reader.ReadSingle();
                 rightArmStretch = reader.ReadSingle();
             }
-
-            shadow.transform.position = position;
-            shadow.transform.rotation = rotation;
         }
 
         public void SetShadowMaterial(Color color)
         {
-            SkinnedMeshRenderer[] meshRenderers = shadow.GetComponentsInChildren<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer[] meshRenderers = player.GetComponentsInChildren<SkinnedMeshRenderer>();
 
             foreach (SkinnedMeshRenderer renderer in meshRenderers)
             {
@@ -113,17 +143,28 @@ namespace CoopMod
 
         public void UpdateShadowTransforms()
         {
-            shadow.transform.position = Vector3.Lerp(shadow.transform.position, position, 0.5f);
-            shadow.transform.rotation = Quaternion.Lerp(shadow.transform.rotation, rotation, 0.5f);
+            player.transform.position = position;
+            player.transform.rotation = rotation;
 
-            leftHand.transform.position = Vector3.Lerp(leftHand.transform.position, leftHandPos, 0.5f);
-            rightHand.transform.position = Vector3.Lerp(rightHand.transform.position, rightHandPos, 0.5f);
+            leftHand.transform.position = leftHandPos;
+            rightHand.transform.position = rightHandPos;
 
-            leftFoot.transform.position = Vector3.Lerp(leftFoot.transform.position, leftFootPos, 0.5f);
-            rightFoot.transform.position = Vector3.Lerp(rightFoot.transform.position, rightFootPos, 0.5f);
+            leftFoot.transform.position = leftFootPos;
+            rightFoot.transform.position = rightFootPos;
 
-            leftFootBend.transform.position = Vector3.Lerp(leftFootBend.transform.position, leftFootBendPos, 0.5f);
-            rightFootBend.transform.position = Vector3.Lerp(rightFootBend.transform.position, rightFootBendPos, 0.5f);
+            leftFootBend.transform.position = leftFootBendPos;
+            rightFootBend.transform.position = rightFootBendPos;
+
+            leftHand.transform.rotation = leftHandRot;
+            rightHand.transform.rotation = rightHandRot;
+
+            leftFoot.transform.rotation = leftFootRot;
+            rightFoot.transform.rotation = rightFootRot;
+
+            leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
+            rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
+
+            SetShadowMaterial(Color.blue);
         }
     }
 }
