@@ -10,7 +10,7 @@ using BepInEx;
 
 namespace CoopMod
 {
-    [BepInPlugin("com.github.Elvonia.poy-coop-mod", "Coop Mod", PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin("com.github.Elvonia.poy-coop-mod", "Coop Mod Test", PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin {
         public void Awake() {
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -42,7 +42,7 @@ namespace CoopMod
 #elif MELONLOADER
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(CoopMod.Mod), "Coop Mod", PluginInfo.PLUGIN_VERSION, "Kalico")]
+[assembly: MelonInfo(typeof(CoopMod.Mod), "Coop Mod Test", PluginInfo.PLUGIN_VERSION, "Kalico")]
 [assembly: MelonGame("TraipseWare", "Peaks of Yore")]
 
 namespace CoopMod
