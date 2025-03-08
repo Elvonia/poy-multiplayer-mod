@@ -27,7 +27,6 @@ namespace CoopMod
         private float leftArmStretch = 1f;
         private float rightArmStretch = 1f;
 
-
         public Player()
         {
             player = GameObject.FindGameObjectWithTag("Player");
@@ -101,7 +100,7 @@ namespace CoopMod
 
         public void UpdatePlayer()
         {
-            position = player.transform.position;
+            position = shadow.transform.position;
             rotation = shadow.transform.rotation;
 
             leftHandPos = shadow.handIK_L.solver.arm.target.position;

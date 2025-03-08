@@ -81,7 +81,10 @@ namespace CoopMod
             {
                 OpenSteamFriendsList();
             }
+        }
 
+        public override void OnFixedUpdate()
+        {
             if (player != null)
             {
                 player.UpdatePlayer();
@@ -263,8 +266,7 @@ namespace CoopMod
                     Shadow shadow = remotePlayers.Find(p => p.GetSteamID() == senderID);
                     if (shadow == null)
                     {
-                        GameObject newShadow = GameObject.Instantiate(playerShadow);
-                        shadow = new Shadow(senderID, newShadow);
+                        shadow = new Shadow(senderID, playerShadow);
                         remotePlayers.Add(shadow);
                     }
                     shadow.SetShadowDataFromBytes(buffer);
