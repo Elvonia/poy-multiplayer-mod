@@ -1,11 +1,8 @@
 using Steamworks;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using MultiplayerMod.UI;
-
 
 #if BEPINEX
 using BepInEx;
@@ -13,8 +10,10 @@ using BepInEx;
 namespace MultiplayerMod
 {
     [BepInPlugin("com.github.Elvonia.poy-multiplayer-mod", "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION)]
-    public class Plugin : BaseUnityPlugin {
-        public void Awake() {
+    public class MultiplayerMod : BaseUnityPlugin 
+    {
+        public void Awake() 
+        {
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
         
@@ -23,7 +22,7 @@ namespace MultiplayerMod
 
         public void OnDestroy() 
         {
-            CommonClose();
+            CommonDestroy();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -277,16 +276,16 @@ namespace MultiplayerMod
 
                 if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out bytesRead, out senderID))
                 {
-                    PlayerClone shadow = remotePlayers.Find(s => s.GetSteamID() == senderID);
+                    PlayerClone playerClone = remotePlayers.Find(s => s.GetSteamID() == senderID);
 
-                    if (shadow == null)
+                    if (playerClone == null)
                     {
-                        shadow = new PlayerClone(senderID, playerShadow);
-                        remotePlayers.Add(shadow);
+                        playerClone = new PlayerClone(senderID, playerShadow);
+                        remotePlayers.Add(playerClone);
                     }
 
-                    shadow.SetShadowDataFromBytes(buffer);
-                    shadow.UpdateShadowTransforms();
+                    playerClone.SetShadowDataFromBytes(buffer);
+                    playerClone.UpdateShadowTransforms();
                 }
             }
         }
