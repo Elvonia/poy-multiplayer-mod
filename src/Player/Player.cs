@@ -1,35 +1,35 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace CoopMod
+namespace MultiplayerMod
 {
     public class Player
     {
-        private GameObject player;
         private PlayerShadow shadow;
 
         private Vector3 position;
         private Quaternion rotation;
 
-        private Vector3 leftHandPos = Vector3.zero;
-        private Vector3 rightHandPos = Vector3.zero;
-        private Vector3 leftFootPos = Vector3.zero;
-        private Vector3 rightFootPos = Vector3.zero;
-        private Vector3 leftFootBendPos = Vector3.zero;
-        private Vector3 rightFootBendPos = Vector3.zero;
+        private Vector3 leftHandPos;
+        private Vector3 rightHandPos;
+        private Vector3 leftFootPos;
+        private Vector3 rightFootPos;
+        private Vector3 leftFootBendPos;
+        private Vector3 rightFootBendPos;
 
-        private Quaternion leftHandRot = Quaternion.identity;
-        private Quaternion rightHandRot = Quaternion.identity;
-        private Quaternion leftFootRot = Quaternion.identity;
-        private Quaternion rightFootRot = Quaternion.identity;
+        private Quaternion leftHandRot;
+        private Quaternion rightHandRot;
+        private Quaternion leftFootRot;
+        private Quaternion rightFootRot;
 
         private float leftArmStretch = 1f;
         private float rightArmStretch = 1f;
 
+        private Color color;
+
         public Player()
         {
-            player = GameObject.FindGameObjectWithTag("Player");
-            shadow = GameObject.FindObjectOfType<PlayerShadow>();
+            shadow = Object.FindObjectOfType<PlayerShadow>();
         }
 
         public byte[] GetPlayerDataBytes()
@@ -93,8 +93,18 @@ namespace CoopMod
                 writer.Write(leftArmStretch);
                 writer.Write(rightArmStretch);
 
+                writer.Write(color.r);
+                writer.Write(color.g);
+                writer.Write(color.b);
+                writer.Write(color.a);
+
                 return stream.ToArray();
             }
+        }
+
+        public void SetColor(Color color)
+        {
+            this.color = color;
         }
 
         public void UpdatePlayer()

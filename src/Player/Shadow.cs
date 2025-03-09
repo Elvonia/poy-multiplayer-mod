@@ -3,13 +3,12 @@ using Steamworks;
 using System.IO;
 using UnityEngine;
 
-namespace CoopMod
+namespace MultiplayerMod
 {
     public class Shadow
     {
         private CSteamID steamID;
 
-        private GameObject shadow;
         private GameObject player;
 
         private ArmIK leftHandIK;
@@ -28,26 +27,27 @@ namespace CoopMod
         private GameObject leftFootBend;
         private GameObject rightFootBend;
 
-        private Vector3 leftHandPos = Vector3.zero;
-        private Vector3 rightHandPos = Vector3.zero;
-        private Vector3 leftFootPos = Vector3.zero;
-        private Vector3 rightFootPos = Vector3.zero;
-        private Vector3 leftFootBendPos = Vector3.zero;
-        private Vector3 rightFootBendPos = Vector3.zero;
+        private Vector3 leftHandPos;
+        private Vector3 rightHandPos;
+        private Vector3 leftFootPos;
+        private Vector3 rightFootPos;
+        private Vector3 leftFootBendPos;
+        private Vector3 rightFootBendPos;
 
-        private Quaternion leftHandRot = Quaternion.identity;
-        private Quaternion rightHandRot = Quaternion.identity;
-        private Quaternion leftFootRot = Quaternion.identity;
-        private Quaternion rightFootRot = Quaternion.identity;
+        private Quaternion leftHandRot;
+        private Quaternion rightHandRot;
+        private Quaternion leftFootRot;
+        private Quaternion rightFootRot;
 
         private float leftArmStretch = 1f;
         private float rightArmStretch = 1f;
+
+        private Color color;
 
 
         public Shadow(CSteamID steamID, GameObject shadow)
         {
             this.steamID = steamID;
-            this.shadow = shadow;
 
             player = Object.Instantiate(shadow);
             player.name = $"PlayerClone_{steamID}";
@@ -94,6 +94,8 @@ namespace CoopMod
 
             leftHandIK.fixTransforms = true;
             rightHandIK.fixTransforms = true;
+
+            color = Color.blue;
         }
 
         public CSteamID GetSteamID()
@@ -126,6 +128,8 @@ namespace CoopMod
 
                 leftArmStretch = reader.ReadSingle();
                 rightArmStretch = reader.ReadSingle();
+
+                color = new Color(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
             }
         }
 
@@ -164,7 +168,7 @@ namespace CoopMod
             leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
             rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
 
-            SetShadowMaterial(Color.blue);
+            SetShadowMaterial(color);
         }
     }
 }

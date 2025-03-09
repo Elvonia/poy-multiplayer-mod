@@ -4,19 +4,26 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using MultiplayerMod.UI;
+
 
 #if BEPINEX
 using BepInEx;
 
-namespace CoopMod
+namespace MultiplayerMod
 {
-    [BepInPlugin("com.github.Elvonia.poy-coop-mod", "Coop Mod Test", PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin("com.github.Elvonia.poy-multiplayer-mod", "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin {
         public void Awake() {
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
         
             CommonAwake();
+        }
+
+        public void OnDestroy() 
+        {
+            CommonClose();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -42,16 +49,29 @@ namespace CoopMod
 #elif MELONLOADER
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(CoopMod.Mod), "Coop Mod Test", PluginInfo.PLUGIN_VERSION, "Kalico")]
+[assembly: MelonInfo(typeof(MultiplayerMod.MultiplayerMod), "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION, "Kalico")]
 [assembly: MelonGame("TraipseWare", "Peaks of Yore")]
 
-namespace CoopMod
+namespace MultiplayerMod
 {
-    public class Mod : MelonMod
+    public class MultiplayerMod : MelonMod
     {
         public override void OnInitializeMelon()
         {
             CommonAwake();
+        }
+
+        public override void OnDeinitializeMelon()
+        {
+            if (SteamNetworking.IsP2PPacketAvailable(out _))
+            {
+                SteamNetworking.CloseP2PSessionWithUser(currentLobbyID);
+            }
+
+            if (currentLobbyID.IsValid())
+            {
+                SteamMatchmaking.LeaveLobby(currentLobbyID);
+            }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -74,10 +94,10 @@ namespace CoopMod
             CommonFixedUpdate();
         }
 #endif
-        private CSteamID currentLobbyID;
 
-        private GameObject uiCanvas;
-        private Text uiText;
+        public CSteamID currentLobbyID;
+
+        public MultiplayerDebugUI debugUI;
 
         private Player player;
         private GameObject playerShadow;
@@ -93,20 +113,38 @@ namespace CoopMod
 
             StealPlayerShadow();
 
-            Callback<LobbyCreated_t>.Create(OnLobbyCreated);
-            Callback<LobbyEnter_t>.Create(OnLobbyJoined);
-            Callback<GameLobbyJoinRequested_t>.Create(OnFriendJoined);
-            Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdated);
+            Callback<GameLobbyJoinRequested_t>.Create((callback) => Steam.Callbacks.OnFriendJoined(callback, this));
+            Callback<LobbyChatUpdate_t>.Create((callback) => Steam.Callbacks.OnLobbyChatUpdated(callback, this));
+            Callback<LobbyCreated_t>.Create((callback) => Steam.Callbacks.OnLobbyCreated(callback, this));
+            Callback<LobbyEnter_t>.Create((callback) => Steam.Callbacks.OnLobbyJoined(callback, this));
 
+            // Move to UI to select lobby type + player count
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
+        }
+
+        public void CommonDestroy()
+        {
+            // Close P2P + Lobby to prevent application hang
+            if (SteamNetworking.IsP2PPacketAvailable(out _))
+            {
+                SteamNetworking.CloseP2PSessionWithUser(currentLobbyID);
+            }
+
+            if (currentLobbyID.IsValid())
+            {
+                SteamMatchmaking.LeaveLobby(currentLobbyID);
+            }
+
+            SteamAPI.Shutdown();
         }
 
         public void CommonSceneLoad(int buildIndex)
         {
-            SetupUI();
-            UpdateLobbyUI();
+            debugUI = new MultiplayerDebugUI();
+            debugUI.UpdateLobbyUI(currentLobbyID);
 
-            if (buildIndex == 0 || buildIndex == 1
+            // Skip cabins as they lack a PlayerShadow on the Player
+            if (buildIndex == 0 || buildIndex == 1 
                 || buildIndex == 37 || buildIndex == 67)
             {
                 return;
@@ -117,10 +155,15 @@ namespace CoopMod
 
         public void CommonSceneUnload()
         {
+            // Close P2P session to prevent application hang
+            if (SteamNetworking.IsP2PPacketAvailable(out _))
+            {
+                SteamNetworking.CloseP2PSessionWithUser(currentLobbyID);
+            }
+
+            debugUI = null;
             player = null;
             remotePlayers.Clear();
-            uiCanvas = null;
-            uiText = null;
         }
 
         public void CommonUpdate()
@@ -132,13 +175,13 @@ namespace CoopMod
 
             if(Input.GetKeyDown(KeyCode.F2))
             {
-                if (uiCanvas.activeSelf)
+                if (debugUI.active)
                 {
-                    uiCanvas.SetActive(false);
+                    debugUI.DisableUI();
                 }
                 else
                 {
-                    uiCanvas.SetActive(true);
+                    debugUI.EnableUI();
                 }
             }
         }
@@ -154,55 +197,6 @@ namespace CoopMod
             ReceivePlayerTransforms();
         }
 
-        #region UI
-        private void SetupUI()
-        {
-            if (uiCanvas != null) return;
-
-            uiCanvas = new GameObject("CoopModUI");
-            Canvas canvas = uiCanvas.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 420;
-
-            GameObject textObject = new GameObject("LobbyText");
-            textObject.transform.SetParent(uiCanvas.transform);
-
-            uiText = textObject.AddComponent<Text>();
-            uiText.font = Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(f => f.name == "roman-antique.regular");
-            uiText.fontSize = 24;
-            uiText.alignment = TextAnchor.UpperLeft;
-            uiText.rectTransform.sizeDelta = new Vector2(Screen.width, Screen.height);
-            uiText.rectTransform.anchoredPosition = new Vector2(40, -40);
-            uiText.lineSpacing = 3f;
-
-            UpdateUI("Initializing...");
-        }
-
-        private void UpdateUI(string message)
-        {
-            if (uiText != null)
-            {
-                uiText.text = message;
-            }
-        }
-
-        private void UpdateLobbyUI()
-        {
-            if (!currentLobbyID.IsValid()) return;
-
-            int playerCount = SteamMatchmaking.GetNumLobbyMembers(currentLobbyID);
-            string playerList = $"Lobby ID: {currentLobbyID}\nPlayers: {playerCount}\n";
-
-            for (int i = 0; i < playerCount; i++)
-            {
-                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(currentLobbyID, i);
-                string playerName = SteamFriends.GetFriendPersonaName(playerID);
-                playerList += $"{playerName}\n";
-            }
-
-            UpdateUI(playerList);
-        }
-
         private void OpenSteamFriendsList()
         {
             if (currentLobbyID.IsValid())
@@ -214,39 +208,6 @@ namespace CoopMod
                 SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 2);
             }
         }
-        #endregion
-
-        #region Lobby Callbacks
-        private void OnLobbyCreated(LobbyCreated_t callback)
-        {
-            if (callback.m_eResult == EResult.k_EResultOK)
-            {
-                currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
-                UpdateLobbyUI();
-            }
-        }
-
-        private void OnLobbyJoined(LobbyEnter_t callback)
-        {
-            currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
-            UpdateLobbyUI();
-        }
-
-        private void OnFriendJoined(GameLobbyJoinRequested_t callback)
-        {
-            CSteamID friendID = callback.m_steamIDFriend;
-            currentLobbyID = callback.m_steamIDLobby;
-            SteamMatchmaking.JoinLobby(currentLobbyID);
-        }
-
-        private void OnLobbyChatUpdated(LobbyChatUpdate_t callback)
-        {
-            if (callback.m_ulSteamIDLobby == (ulong)currentLobbyID)
-            {
-                UpdateLobbyUI();
-            }
-        }
-        #endregion
 
         #region PlayerShadow Duplication
         private void StealPlayerShadow()
