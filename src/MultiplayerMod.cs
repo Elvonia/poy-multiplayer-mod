@@ -20,11 +20,6 @@ namespace MultiplayerMod
             CommonAwake();
         }
 
-        public void OnDestroy() 
-        {
-            CommonDestroy();
-        }
-
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             CommonSceneLoad(scene.buildIndex);
@@ -35,14 +30,19 @@ namespace MultiplayerMod
             CommonSceneUnload();
         }
 
+        public void FixedUpdate()
+        {
+            CommonFixedUpdate();
+        }
+
         public void Update()
         {
             CommonUpdate();
         }
 
-        public void FixedUpdate()
+        public void OnDestroy() 
         {
-            CommonFixedUpdate();
+            CommonDestroy();
         }
 
 #elif MELONLOADER
