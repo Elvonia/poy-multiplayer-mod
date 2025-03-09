@@ -102,7 +102,7 @@ namespace MultiplayerMod
         private Player player;
         private GameObject playerShadow;
 
-        private List<Shadow> remotePlayers = new List<Shadow>();
+        private List<PlayerClone> remotePlayers = new List<PlayerClone>();
 
         public void CommonAwake()
         {
@@ -277,11 +277,11 @@ namespace MultiplayerMod
 
                 if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out bytesRead, out senderID))
                 {
-                    Shadow shadow = remotePlayers.Find(s => s.GetSteamID() == senderID);
+                    PlayerClone shadow = remotePlayers.Find(s => s.GetSteamID() == senderID);
 
                     if (shadow == null)
                     {
-                        shadow = new Shadow(senderID, playerShadow);
+                        shadow = new PlayerClone(senderID, playerShadow);
                         remotePlayers.Add(shadow);
                     }
 

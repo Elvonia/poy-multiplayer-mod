@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MultiplayerMod
 {
-    public class Shadow
+    public class PlayerClone
     {
         private CSteamID steamID;
 
@@ -45,7 +45,7 @@ namespace MultiplayerMod
         private Color color;
 
 
-        public Shadow(CSteamID steamID, GameObject shadow)
+        public PlayerClone(CSteamID steamID, GameObject shadow)
         {
             this.steamID = steamID;
 
