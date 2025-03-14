@@ -4,9 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Multiplayer.UI;
 using Multiplayer.Steam;
-
-
-
+using Multiplayer.Logger;
 
 #if BEPINEX
 using BepInEx;
@@ -156,6 +154,8 @@ namespace Multiplayer
                 byte[] nullIndexBytes = packetManager.CreateNullSceneUpdatePacket();
                 packetManager.SendReliablePacket(currentLobbyID, nullIndexBytes);
 
+                LogManager.Debug("Broadcasting null scene update packet");
+
                 return;
             }
 
@@ -164,22 +164,28 @@ namespace Multiplayer
 
             foreach (PlayerClone playerClone in remotePlayers)
             {
+                LogManager.Debug("Checking remote players for like scenes....");
+
                 if (buildIndex == playerClone.GetSceneIndex())
                 {
                     playerClone.CreatePlayerGameObject(playerShadow);
+                    LogManager.Debug($"Rebuilding player object for user {playerClone.GetSteamID()}");
                 }
             }
 
             byte[] sceneUpdatePacket = packetManager.CreateSceneUpdatePacket(player);
             packetManager.SendReliablePacket(currentLobbyID, sceneUpdatePacket);
+
+            LogManager.Debug("Broadcasting scene update packet");
         }
 
         public void CommonSceneUnload()
         {
             foreach (PlayerClone player in remotePlayers)
             {
-                SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
+                //SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
                 player.DestroyPlayerGameObject();
+                LogManager.Debug($"Destroyed {remotePlayers.Count} PlayerClones");
             }
 
             debugUI = null;
@@ -212,6 +218,12 @@ namespace Multiplayer
 
                 byte[] colorPacket = packetManager.CreateColorUpdatePacket(player);
                 packetManager.SendReliablePacket(currentLobbyID, colorPacket);
+
+                LogManager.Debug("Setting random player color - " +
+                                    $"R:{randomColor.r} " +
+                                    $"G:{randomColor.g} " +
+                                    $"B:{randomColor.b} " +
+                                    $"A:{randomColor.a}");
             }
         }
 
@@ -233,10 +245,7 @@ namespace Multiplayer
             if (currentLobbyID.IsValid())
             {
                 SteamFriends.ActivateGameOverlayInviteDialog(currentLobbyID);
-            }
-            else
-            {
-                SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
+                LogManager.Debug("Opened steam friends list");
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using Multiplayer.Logger;
+using Steamworks;
 using System.IO;
 using System.Numerics;
 using UnityEngine;
@@ -19,6 +20,8 @@ namespace Multiplayer.Steam
                     continue;
 
                 SteamNetworking.SendP2PPacket(playerSteamID, packet, (uint)packet.Length, sendType);
+
+                //LogManager.Debug($"Sent packet of size {packet.Length} to {playerSteamID}");
             }
         }
 
@@ -118,22 +121,32 @@ namespace Multiplayer.Steam
                     {
                         case (byte)PacketType.PlayerColorUpdate:
                             ReceiveColorUpdate(instance, sender, buffer);
+
+                            LogManager.Debug($"PlayerColorUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerPositionUpdate:
                             ReceivePositionUpdate(instance, sender, buffer);
+
+                            //LogManager.Debug($"PlayerPositionUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerSceneUpdate:
                             ReceiveSceneUpdate(instance, sender, buffer);
+
+                            LogManager.Debug($"PlayerSceneUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerSitUpdate:
                             ReceiveSitUpdate(instance, sender, buffer);
+
+                            LogManager.Debug($"PlayerSitUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerSummitedUpdate:
                             ReceiveSummitedUpdate(instance, sender, buffer);
+
+                            LogManager.Debug($"PlayerSummitedUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                     }
@@ -154,6 +167,8 @@ namespace Multiplayer.Steam
                 if (playerClone != null)
                 {
                     playerClone.SetMaterialColor(color);
+
+                    LogManager.Debug($"Applied new clone color from packet to {senderID}");
                 }
             }
         }
@@ -177,6 +192,8 @@ namespace Multiplayer.Steam
                     {
                         playerClone.SetPositionDataFromBytes(positionData);
                         playerClone.UpdateTransforms();
+
+                        LogManager.Debug($"Applied new clone position from packet to {senderID}");
                     }
                 }
             }
@@ -208,6 +225,8 @@ namespace Multiplayer.Steam
                         playerClone.DestroyPlayerGameObject();
 
                         instance.remotePlayers.Add(playerClone);
+
+                        LogManager.Debug($"Cabin || No Clone");
                         return;
                     }
 
@@ -218,12 +237,16 @@ namespace Multiplayer.Steam
                         playerClone.SetSceneIndex(sceneIndex);
 
                         instance.remotePlayers.Add(playerClone);
+
+                        LogManager.Debug($"Same Scene || No Clone");
                         return;
                     }
                     else
                     {
                         playerClone.CreatePlayerGameObject(instance.playerShadow);
                         playerClone.SetSceneIndex(sceneIndex);
+
+                        LogManager.Debug($"Same Scene || Clone Exists");
                         return;
                     }
                 }
@@ -234,6 +257,8 @@ namespace Multiplayer.Steam
                     {
                         playerClone.DestroyPlayerGameObject();
                         playerClone.SetSceneIndex(sceneIndex);
+
+                        LogManager.Debug($"Different Scene || Clone Exists");
                         return;
                     }
                     else
@@ -243,6 +268,8 @@ namespace Multiplayer.Steam
                         playerClone.DestroyPlayerGameObject();
 
                         instance.remotePlayers.Add(playerClone);
+
+                        LogManager.Debug($"Different Scene || No Clone");
                         return;
                     }
                 }

@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using Multiplayer.Logger;
+using Steamworks;
 
 namespace Multiplayer.Steam
 {
@@ -14,6 +15,14 @@ namespace Multiplayer.Steam
         {
             if (callback.m_ulSteamIDLobby == (ulong)instance.currentLobbyID)
             {
+                CSteamID friendID = (CSteamID)callback.m_ulSteamIDUserChanged;
+
+                PlayerClone playerClone = new PlayerClone(friendID, instance.playerShadow);
+                playerClone.DestroyPlayerGameObject();
+
+                instance.remotePlayers.Add(playerClone);
+                LogManager.Debug($"Added {friendID} to remotePlayers");
+
                 instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
             }
         }
@@ -31,6 +40,24 @@ namespace Multiplayer.Steam
         {
             instance.currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
             instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
+
+            int memberCount = SteamMatchmaking.GetNumLobbyMembers(instance.currentLobbyID);
+            LogManager.Debug($"{memberCount} existing players detected");
+
+            for (int i = 0; i < memberCount; i++)
+            {
+                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(instance.currentLobbyID, i);
+
+                if (playerID != SteamUser.GetSteamID()) // Don't create a clone for yourself
+                {
+                    if (!instance.remotePlayers.Exists(p => p.GetSteamID() == playerID))
+                    {
+                        PlayerClone playerClone = new PlayerClone(playerID, instance.playerShadow);
+                        instance.remotePlayers.Add(playerClone);
+                        LogManager.Debug($"Added {playerID} to remotePlayers");
+                    }
+                }
+            }
         }
     }
 }
