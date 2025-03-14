@@ -2,12 +2,16 @@ using Steamworks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MultiplayerMod.UI;
+using Multiplayer.UI;
+using Multiplayer.Steam;
+
+
+
 
 #if BEPINEX
 using BepInEx;
 
-namespace MultiplayerMod
+namespace Multiplayer
 {
     [BepInPlugin("com.github.Elvonia.poy-multiplayer-mod", "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION)]
     public class MultiplayerMod : BaseUnityPlugin 
@@ -48,10 +52,10 @@ namespace MultiplayerMod
 #elif MELONLOADER
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(MultiplayerMod.MultiplayerMod), "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION, "Kalico")]
+[assembly: MelonInfo(typeof(Multiplayer.MultiplayerMod), "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION, "Kalico")]
 [assembly: MelonGame("TraipseWare", "Peaks of Yore")]
 
-namespace MultiplayerMod
+namespace Multiplayer
 {
     public class MultiplayerMod : MelonMod
     {
@@ -96,12 +100,13 @@ namespace MultiplayerMod
 
         public CSteamID currentLobbyID;
 
+        public Player player;
+        public GameObject playerShadow;
+
         public MultiplayerDebugUI debugUI;
+        public PacketManager packetManager;
 
-        private Player player;
-        private GameObject playerShadow;
-
-        private List<PlayerClone> remotePlayers = new List<PlayerClone>();
+        public List<PlayerClone> remotePlayers = new List<PlayerClone>();
 
         public void CommonAwake()
         {
@@ -112,21 +117,23 @@ namespace MultiplayerMod
 
             StealPlayerShadow();
 
-            Callback<GameLobbyJoinRequested_t>.Create((callback) => Steam.Callbacks.OnFriendJoined(callback, this));
-            Callback<LobbyChatUpdate_t>.Create((callback) => Steam.Callbacks.OnLobbyChatUpdated(callback, this));
-            Callback<LobbyCreated_t>.Create((callback) => Steam.Callbacks.OnLobbyCreated(callback, this));
-            Callback<LobbyEnter_t>.Create((callback) => Steam.Callbacks.OnLobbyJoined(callback, this));
+            Callback<GameLobbyJoinRequested_t>.Create((callback) => Callbacks.OnFriendJoined(callback, this));
+            Callback<LobbyChatUpdate_t>.Create((callback) => Callbacks.OnLobbyChatUpdated(callback, this));
+            Callback<LobbyCreated_t>.Create((callback) => Callbacks.OnLobbyCreated(callback, this));
+            Callback<LobbyEnter_t>.Create((callback) => Callbacks.OnLobbyJoined(callback, this));
 
             // Move to UI to select lobby type + player count
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
+
+            packetManager = new PacketManager();
         }
 
         public void CommonDestroy()
         {
             // Close P2P + Lobby to prevent application hang
-            if (SteamNetworking.IsP2PPacketAvailable(out _))
+            foreach (PlayerClone player in remotePlayers)
             {
-                SteamNetworking.CloseP2PSessionWithUser(currentLobbyID);
+                SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
             }
 
             if (currentLobbyID.IsValid())
@@ -146,23 +153,37 @@ namespace MultiplayerMod
             if (buildIndex == 0 || buildIndex == 1 
                 || buildIndex == 37 || buildIndex == 67)
             {
+                byte[] nullIndexBytes = packetManager.CreateNullSceneUpdatePacket();
+                packetManager.SendReliablePacket(currentLobbyID, nullIndexBytes);
+
                 return;
             }
 
             player = new Player();
+            player.SetScene(buildIndex);
+
+            foreach (PlayerClone playerClone in remotePlayers)
+            {
+                if (buildIndex == playerClone.GetSceneIndex())
+                {
+                    playerClone.CreatePlayerGameObject(playerShadow);
+                }
+            }
+
+            byte[] sceneUpdatePacket = packetManager.CreateSceneUpdatePacket(player);
+            packetManager.SendReliablePacket(currentLobbyID, sceneUpdatePacket);
         }
 
         public void CommonSceneUnload()
         {
-            // Close P2P session to prevent application hang
-            if (SteamNetworking.IsP2PPacketAvailable(out _))
+            foreach (PlayerClone player in remotePlayers)
             {
-                SteamNetworking.CloseP2PSessionWithUser(currentLobbyID);
+                SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
+                player.DestroyPlayerGameObject();
             }
 
             debugUI = null;
             player = null;
-            remotePlayers.Clear();
         }
 
         public void CommonUpdate()
@@ -183,6 +204,15 @@ namespace MultiplayerMod
                     debugUI.EnableUI();
                 }
             }
+
+            if (Input.GetKeyDown(KeyCode.F3))
+            {
+                Color randomColor = new Color(Random.value, Random.value, Random.value);
+                player.SetColor(randomColor);
+
+                byte[] colorPacket = packetManager.CreateColorUpdatePacket(player);
+                packetManager.SendReliablePacket(currentLobbyID, colorPacket);
+            }
         }
 
         public void CommonFixedUpdate()
@@ -190,10 +220,12 @@ namespace MultiplayerMod
             if (player != null)
             {
                 player.UpdatePlayer();
-                SendPlayerTransforms();
+
+                byte[] positionPacket = packetManager.CreatePositionUpdatePacket(player);
+                packetManager.SendUnreliableNoDelayPacket(currentLobbyID, positionPacket);
             }
 
-            ReceivePlayerTransforms();
+            packetManager.ReceivePackets(this);
         }
 
         private void OpenSteamFriendsList()
@@ -204,7 +236,7 @@ namespace MultiplayerMod
             }
             else
             {
-                SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 2);
+                SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
             }
         }
 
@@ -244,50 +276,6 @@ namespace MultiplayerMod
         private void ReloadTitleMenu()
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
-        #endregion
-
-        #region Send + Receive Player Transforms
-        private void SendPlayerTransforms()
-        {
-            if (!currentLobbyID.IsValid()) return;
-
-            byte[] data = player.GetPlayerDataBytes();
-            int playerCount = SteamMatchmaking.GetNumLobbyMembers(currentLobbyID);
-
-            for (int i = 0; i < playerCount; i++)
-            {
-                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(currentLobbyID, i);
-                if (playerID != SteamUser.GetSteamID())
-                {
-                    SteamNetworking.SendP2PPacket(playerID, data, (uint)data.Length, EP2PSend.k_EP2PSendUnreliable);
-                }
-            }
-        }
-
-        private void ReceivePlayerTransforms()
-        {
-            uint msgSize;
-            while (SteamNetworking.IsP2PPacketAvailable(out msgSize))
-            {
-                byte[] buffer = new byte[msgSize];
-                uint bytesRead;
-                CSteamID senderID;
-
-                if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out bytesRead, out senderID))
-                {
-                    PlayerClone playerClone = remotePlayers.Find(s => s.GetSteamID() == senderID);
-
-                    if (playerClone == null)
-                    {
-                        playerClone = new PlayerClone(senderID, playerShadow);
-                        remotePlayers.Add(playerClone);
-                    }
-
-                    playerClone.SetShadowDataFromBytes(buffer);
-                    playerClone.UpdateShadowTransforms();
-                }
-            }
         }
         #endregion
     }

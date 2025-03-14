@@ -3,12 +3,11 @@ using Steamworks;
 using System.IO;
 using UnityEngine;
 
-namespace MultiplayerMod
+namespace Multiplayer
 {
     public class PlayerClone
     {
         private CSteamID steamID;
-
         private GameObject player;
 
         private ArmIK leftHandIK;
@@ -43,59 +42,87 @@ namespace MultiplayerMod
         private float rightArmStretch = 1f;
 
         private Color color;
+        private int sceneIndex;
 
 
         public PlayerClone(CSteamID steamID, GameObject shadow)
         {
             this.steamID = steamID;
-
-            player = Object.Instantiate(shadow);
-            player.name = $"PlayerClone_{steamID}";
-            player.SetActive(true);
-
-            position = shadow.transform.position;
-            rotation = shadow.transform.rotation;
-
-            leftHand = new GameObject("LeftHand");
-            leftHand.transform.SetParent(player.transform);
-
-            rightHand = new GameObject("RightHand");
-            rightHand.transform.SetParent(player.transform);
-
-            leftFoot = new GameObject("LeftFoot");
-            leftFoot.transform.SetParent(player.transform);
-
-            rightFoot = new GameObject("RightFoot");
-            rightFoot.transform.SetParent(player.transform);
-
-            leftFootBend = new GameObject("LeftFootBend");
-            leftFootBend.transform.SetParent(player.transform);
-
-            rightFootBend = new GameObject("RightFootBend");
-            rightFootBend.transform.SetParent(player.transform);
-
-            leftHandIK = player.transform.GetChild(6).GetComponent<ArmIK>();
-            rightHandIK = player.transform.GetChild(7).GetComponent<ArmIK>();
-
-            leftFootIK = player.transform.GetChild(4).GetComponent<LimbIK>();
-            rightFootIK = player.transform.GetChild(5).GetComponent<LimbIK>();
-
-            leftHandIK.solver.arm.target = leftHand.transform;
-            rightHandIK.solver.arm.target = rightHand.transform;
-
-            leftFootIK.solver.target = leftFoot.transform;
-            rightFootIK.solver.target = rightFoot.transform;
-
-            leftFootIK.solver.bendGoal = leftFootBend.transform;
-            rightFootIK.solver.bendGoal = rightFootBend.transform;
-
-            leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
-            rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
-
-            leftHandIK.fixTransforms = true;
-            rightHandIK.fixTransforms = true;
-
             color = Color.blue;
+
+            if (shadow != null)
+                CreatePlayerGameObject(shadow);
+        }
+
+        public void DestroyPlayerGameObject()
+        {
+            if (player != null)
+            {
+                Object.Destroy(player);
+                player = null;
+            }
+        }
+
+        public void CreatePlayerGameObject(GameObject shadow)
+        {
+            if (player == null)
+            {
+                player = Object.Instantiate(shadow);
+                player.name = $"PlayerClone_{steamID}";
+                player.SetActive(true);
+
+                position = shadow.transform.position;
+                rotation = shadow.transform.rotation;
+
+                leftHand = new GameObject("LeftHand");
+                leftHand.transform.SetParent(player.transform);
+
+                rightHand = new GameObject("RightHand");
+                rightHand.transform.SetParent(player.transform);
+
+                leftFoot = new GameObject("LeftFoot");
+                leftFoot.transform.SetParent(player.transform);
+
+                rightFoot = new GameObject("RightFoot");
+                rightFoot.transform.SetParent(player.transform);
+
+                leftFootBend = new GameObject("LeftFootBend");
+                leftFootBend.transform.SetParent(player.transform);
+
+                rightFootBend = new GameObject("RightFootBend");
+                rightFootBend.transform.SetParent(player.transform);
+
+                leftHandIK = player.transform.GetChild(6).GetComponent<ArmIK>();
+                rightHandIK = player.transform.GetChild(7).GetComponent<ArmIK>();
+
+                leftFootIK = player.transform.GetChild(4).GetComponent<LimbIK>();
+                rightFootIK = player.transform.GetChild(5).GetComponent<LimbIK>();
+
+                leftHandIK.solver.arm.target = leftHand.transform;
+                rightHandIK.solver.arm.target = rightHand.transform;
+
+                leftFootIK.solver.target = leftFoot.transform;
+                rightFootIK.solver.target = rightFoot.transform;
+
+                leftFootIK.solver.bendGoal = leftFootBend.transform;
+                rightFootIK.solver.bendGoal = rightFootBend.transform;
+
+                leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
+                rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
+
+                leftHandIK.fixTransforms = true;
+                rightHandIK.fixTransforms = true;
+            }
+        }
+
+        public GameObject GetPlayer()
+        {
+            return player;
+        }
+
+        public int GetSceneIndex()
+        {
+            return sceneIndex;
         }
 
         public CSteamID GetSteamID()
@@ -103,7 +130,7 @@ namespace MultiplayerMod
             return steamID;
         }
 
-        public void SetShadowDataFromBytes(byte[] data)
+        public void SetPositionDataFromBytes(byte[] data)
         {
             using (var stream = new MemoryStream(data))
             using (var reader = new BinaryReader(stream))
@@ -128,12 +155,10 @@ namespace MultiplayerMod
 
                 leftArmStretch = reader.ReadSingle();
                 rightArmStretch = reader.ReadSingle();
-
-                color = new Color(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
             }
         }
 
-        public void SetShadowMaterial(Color color)
+        public void SetMaterialColor(Color color)
         {
             SkinnedMeshRenderer[] meshRenderers = player.GetComponentsInChildren<SkinnedMeshRenderer>();
 
@@ -145,7 +170,12 @@ namespace MultiplayerMod
             }
         }
 
-        public void UpdateShadowTransforms()
+        public void SetSceneIndex(int sceneIndex)
+        {
+            this.sceneIndex = sceneIndex;
+        }
+
+        public void UpdateTransforms()
         {
             player.transform.position = position;
             player.transform.rotation = rotation;
@@ -168,7 +198,7 @@ namespace MultiplayerMod
             leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
             rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
 
-            SetShadowMaterial(color);
+            SetMaterialColor(color);
         }
     }
 }

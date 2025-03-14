@@ -1,11 +1,11 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace MultiplayerMod
+namespace Multiplayer
 {
     public class Player
     {
-        private PlayerShadow shadow;
+        private PlayerShadow player;
 
         private Vector3 position;
         private Quaternion rotation;
@@ -26,16 +26,31 @@ namespace MultiplayerMod
         private float rightArmStretch = 1f;
 
         private Color color;
+        private int sceneIndex;
 
         public Player()
         {
-            shadow = Object.FindObjectOfType<PlayerShadow>();
+            player = Object.FindObjectOfType<PlayerShadow>();
         }
 
-        public byte[] GetPlayerDataBytes()
+        public byte[] GetColorBytes()
         {
-            using (var stream = new MemoryStream())
-            using (var writer = new BinaryWriter(stream))
+            using (MemoryStream stream = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(color.r);
+                writer.Write(color.g);
+                writer.Write(color.b);
+                writer.Write(color.a);
+
+                return stream.ToArray();
+            }
+        }
+
+        public byte[] GetPositionBytes()
+        {
+            using (MemoryStream stream = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(position.x);
                 writer.Write(position.y);
@@ -93,13 +108,23 @@ namespace MultiplayerMod
                 writer.Write(leftArmStretch);
                 writer.Write(rightArmStretch);
 
-                writer.Write(color.r);
-                writer.Write(color.g);
-                writer.Write(color.b);
-                writer.Write(color.a);
-
                 return stream.ToArray();
             }
+        }
+
+        public byte[] GetSceneBytes()
+        {
+            using (MemoryStream stream = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(sceneIndex);
+                return stream.ToArray();
+            }
+        }
+
+        public int GetSceneIndex()
+        {
+            return sceneIndex;
         }
 
         public void SetColor(Color color)
@@ -107,29 +132,33 @@ namespace MultiplayerMod
             this.color = color;
         }
 
+        public void SetScene(int sceneIndex)
+        {
+            this.sceneIndex = sceneIndex;
+        }
+
         public void UpdatePlayer()
         {
-            position = shadow.transform.position;
-            rotation = shadow.transform.rotation;
+            position = player.transform.position;
+            rotation = player.transform.rotation;
 
-            leftHandPos = shadow.handIK_L.solver.arm.target.position;
-            rightHandPos = shadow.handIK_R.solver.arm.target.position;
+            leftHandPos = player.handIK_L.solver.arm.target.position;
+            rightHandPos = player.handIK_R.solver.arm.target.position;
 
-            leftFootPos = shadow.footIK_L.solver.target.position;
-            rightFootPos = shadow.footIK_R.solver.target.position;
+            leftFootPos = player.footIK_L.solver.target.position;
+            rightFootPos = player.footIK_R.solver.target.position;
 
-            leftFootBendPos = shadow.realleftKnee.transform.position;
-            rightFootBendPos = shadow.realrightKnee.transform.position;
+            leftFootBendPos = player.realleftKnee.transform.position;
+            rightFootBendPos = player.realrightKnee.transform.position;
 
-            leftHandRot = shadow.handIK_L.solver.arm.target.rotation;
-            rightHandRot = shadow.handIK_R.solver.arm.target.rotation;
+            leftHandRot = player.handIK_L.solver.arm.target.rotation;
+            rightHandRot = player.handIK_R.solver.arm.target.rotation;
 
-            leftFootRot = shadow.footIK_L.solver.target.rotation;
-            rightFootRot = shadow.footIK_R.solver.target.rotation;
+            leftFootRot = player.footIK_L.solver.target.rotation;
+            rightFootRot = player.footIK_R.solver.target.rotation;
 
-            leftArmStretch = shadow.handIK_L.solver.arm.armLengthMlp;
-            rightArmStretch = shadow.handIK_R.solver.arm.armLengthMlp;
-
+            leftArmStretch = player.handIK_L.solver.arm.armLengthMlp;
+            rightArmStretch = player.handIK_R.solver.arm.armLengthMlp;
         }
     }
 }

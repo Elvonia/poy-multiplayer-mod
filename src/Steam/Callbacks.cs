@@ -1,6 +1,6 @@
 ﻿using Steamworks;
 
-namespace MultiplayerMod.Steam
+namespace Multiplayer.Steam
 {
     public class Callbacks
     {

@@ -2,9 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <Platform>Any CPU</Platform>
-    <AssemblyName>MultiplayerMod</AssemblyName>
+    <AssemblyName>Multiplayer</AssemblyName>
     <Version>0.2</Version>
-    <RootNamespace>MultiplayerMod</RootNamespace>
+    <RootNamespace>Multiplayer</RootNamespace>
     <Configurations>Debug-BepInEx;Release-BepInEx;Debug-MelonLoader;Release-MelonLoader</Configurations>
     <Configuration Condition="'$(Configuration)' == ''">Debug-BepInEx</Configuration>
     <IntermediateOutputPath>obj/$(Configuration)</IntermediateOutputPath>
