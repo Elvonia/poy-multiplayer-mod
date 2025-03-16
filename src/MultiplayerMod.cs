@@ -119,6 +119,7 @@ namespace Multiplayer
             Callback<LobbyChatUpdate_t>.Create((callback) => Callbacks.OnLobbyChatUpdated(callback, this));
             Callback<LobbyCreated_t>.Create((callback) => Callbacks.OnLobbyCreated(callback, this));
             Callback<LobbyEnter_t>.Create((callback) => Callbacks.OnLobbyJoined(callback, this));
+            Callback<P2PSessionRequest_t>.Create((callback) => Callbacks.OnP2PSessionRequest(callback));
 
             // Move to UI to select lobby type + player count
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
@@ -164,7 +165,7 @@ namespace Multiplayer
 
             foreach (PlayerClone playerClone in remotePlayers)
             {
-                LogManager.Debug("Checking remote players for like scenes....");
+                LogManager.Debug($"Checking remote player {playerClone.GetSteamID()} scene index");
 
                 if (buildIndex == playerClone.GetSceneIndex())
                 {
@@ -249,6 +250,7 @@ namespace Multiplayer
             }
         }
 
+        // move out of main mod
         #region PlayerShadow Duplication
         private void StealPlayerShadow()
         {

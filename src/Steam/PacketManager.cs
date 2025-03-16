@@ -3,6 +3,7 @@ using Steamworks;
 using System.IO;
 using System.Numerics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Multiplayer.Steam
 {
@@ -173,6 +174,7 @@ namespace Multiplayer.Steam
             }
         }
 
+        // check if playerClone is null as it throws errors prior to creation
         public void ReceivePositionUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
         {
             PlayerClone playerClone = instance.remotePlayers.Find(s => s.GetSteamID() == senderID);
@@ -193,7 +195,7 @@ namespace Multiplayer.Steam
                         playerClone.SetPositionDataFromBytes(positionData);
                         playerClone.UpdateTransforms();
 
-                        LogManager.Debug($"Applied new clone position from packet to {senderID}");
+                        //LogManager.Debug($"Applied new clone position from packet to {senderID}");
                     }
                 }
             }
@@ -206,72 +208,30 @@ namespace Multiplayer.Steam
             using (MemoryStream stream = new MemoryStream(packet))
             using (BinaryReader reader = new BinaryReader(stream))
             {
-                if (instance.player == null) 
-                    return;
-
                 if (packet.Length < 5) 
                     return;
 
                 byte packetType = reader.ReadByte();
                 int sceneIndex = reader.ReadInt32();
 
-                if (sceneIndex == instance.player.GetSceneIndex())
+                LogManager.Debug($"{senderID}:{sceneIndex}");
+
+                if (sceneIndex == SceneManager.GetActiveScene().buildIndex)
                 {
-                    // player is in cabin
-                    if (sceneIndex == -1 && playerClone == null)
-                    {
-                        playerClone = new PlayerClone(senderID, instance.playerShadow);
-                        playerClone.SetSceneIndex(sceneIndex);
-                        playerClone.DestroyPlayerGameObject();
-
-                        instance.remotePlayers.Add(playerClone);
-
-                        LogManager.Debug($"Cabin || No Clone");
+                    if (sceneIndex == -1)
                         return;
-                    }
 
-                    // player is in the same scene
-                    if (playerClone == null)
-                    {
-                        playerClone = new PlayerClone(senderID, instance.playerShadow);
-                        playerClone.SetSceneIndex(sceneIndex);
+                    playerClone.CreatePlayerGameObject(instance.playerShadow);
+                    playerClone.SetSceneIndex(sceneIndex);
 
-                        instance.remotePlayers.Add(playerClone);
-
-                        LogManager.Debug($"Same Scene || No Clone");
-                        return;
-                    }
-                    else
-                    {
-                        playerClone.CreatePlayerGameObject(instance.playerShadow);
-                        playerClone.SetSceneIndex(sceneIndex);
-
-                        LogManager.Debug($"Same Scene || Clone Exists");
-                        return;
-                    }
+                    LogManager.Debug($"Same scene detected for player {senderID}");
                 }
                 else
                 {
-                    // player is in a different scene
-                    if (playerClone != null)
-                    {
-                        playerClone.DestroyPlayerGameObject();
-                        playerClone.SetSceneIndex(sceneIndex);
+                    playerClone.DestroyPlayerGameObject();
+                    playerClone.SetSceneIndex(sceneIndex);
 
-                        LogManager.Debug($"Different Scene || Clone Exists");
-                        return;
-                    }
-                    else
-                    {
-                        playerClone = new PlayerClone(senderID, instance.playerShadow);
-                        playerClone.SetSceneIndex(sceneIndex);
-                        playerClone.DestroyPlayerGameObject();
-
-                        instance.remotePlayers.Add(playerClone);
-
-                        LogManager.Debug($"Different Scene || No Clone");
-                        return;
-                    }
+                    LogManager.Debug($"Different scene detected for player {senderID}");
                 }
             }
         }

@@ -8,5 +8,6 @@ namespace MultiplayerMod.UI
 {
     public class Steam
     {
+        // handle friends list
     }
 }

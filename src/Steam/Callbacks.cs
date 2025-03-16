@@ -13,17 +13,44 @@ namespace Multiplayer.Steam
 
         public static void OnLobbyChatUpdated(LobbyChatUpdate_t callback, MultiplayerMod instance)
         {
-            if (callback.m_ulSteamIDLobby == (ulong)instance.currentLobbyID)
+            CSteamID lobbyID = new CSteamID(callback.m_ulSteamIDLobby);
+            CSteamID friendID = (CSteamID)callback.m_ulSteamIDUserChanged;
+            CSteamID friendMakingChangeID = new CSteamID(callback.m_ulSteamIDMakingChange);
+
+            // add new player
+
+            PlayerClone playerClone = new PlayerClone(friendID, instance.playerShadow);
+            playerClone.DestroyPlayerGameObject();
+
+            instance.remotePlayers.Add(playerClone);
+            LogManager.Debug($"Added {friendID} to remotePlayers");
+
+            instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
+
+            // remove player who left/dced
+
+            EChatMemberStateChange change = (EChatMemberStateChange)callback.m_rgfChatMemberStateChange;
+
+            switch (change)
             {
-                CSteamID friendID = (CSteamID)callback.m_ulSteamIDUserChanged;
+                case EChatMemberStateChange.k_EChatMemberStateChangeLeft:
+                case EChatMemberStateChange.k_EChatMemberStateChangeDisconnected:
+                case EChatMemberStateChange.k_EChatMemberStateChangeKicked:
+                case EChatMemberStateChange.k_EChatMemberStateChangeBanned:
 
-                PlayerClone playerClone = new PlayerClone(friendID, instance.playerShadow);
-                playerClone.DestroyPlayerGameObject();
+                    foreach(PlayerClone player in instance.remotePlayers)
+                    {
+                        if (player.GetSteamID() == friendID)
+                        {
+                            player.DestroyPlayerGameObject();
+                            instance.remotePlayers.Remove(player);
 
-                instance.remotePlayers.Add(playerClone);
-                LogManager.Debug($"Added {friendID} to remotePlayers");
+                            LogManager.Debug($"Removed {friendID} from remotePlayers");
+                            break;
+                        }
+                    }
 
-                instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
+                    break;
             }
         }
 
@@ -58,6 +85,12 @@ namespace Multiplayer.Steam
                     }
                 }
             }
+        }
+
+        public static void OnP2PSessionRequest(P2PSessionRequest_t request)
+        {
+            CSteamID friendID = request.m_steamIDRemote;
+            SteamNetworking.AcceptP2PSessionWithUser(friendID);
         }
     }
 }
