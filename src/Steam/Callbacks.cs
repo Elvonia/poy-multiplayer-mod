@@ -13,31 +13,29 @@ namespace Multiplayer.Steam
 
         public static void OnLobbyChatUpdated(LobbyChatUpdate_t callback, MultiplayerMod instance)
         {
-            CSteamID lobbyID = new CSteamID(callback.m_ulSteamIDLobby);
             CSteamID friendID = (CSteamID)callback.m_ulSteamIDUserChanged;
-            CSteamID friendMakingChangeID = new CSteamID(callback.m_ulSteamIDMakingChange);
-
-            // add new player
-
-            PlayerClone playerClone = new PlayerClone(friendID, instance.playerShadow);
-            playerClone.DestroyPlayerGameObject();
-
-            instance.remotePlayers.Add(playerClone);
-            LogManager.Debug($"Added {friendID} to remotePlayers");
-
             instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
-
-            // remove player who left/dced
 
             EChatMemberStateChange change = (EChatMemberStateChange)callback.m_rgfChatMemberStateChange;
 
             switch (change)
             {
+                case EChatMemberStateChange.k_EChatMemberStateChangeEntered:
+
+                    // add player to remotePlayers list
+                    PlayerClone playerClone = new PlayerClone(friendID, instance.playerShadow);
+                    playerClone.DestroyPlayerGameObject();
+
+                    instance.remotePlayers.Add(playerClone);
+                    LogManager.Debug($"Added {friendID} to remotePlayers");
+
+                    break;
                 case EChatMemberStateChange.k_EChatMemberStateChangeLeft:
                 case EChatMemberStateChange.k_EChatMemberStateChangeDisconnected:
                 case EChatMemberStateChange.k_EChatMemberStateChangeKicked:
                 case EChatMemberStateChange.k_EChatMemberStateChangeBanned:
 
+                    // remove player from remotePlayers list
                     foreach(PlayerClone player in instance.remotePlayers)
                     {
                         if (player.GetSteamID() == friendID)
@@ -75,7 +73,7 @@ namespace Multiplayer.Steam
             {
                 CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(instance.currentLobbyID, i);
 
-                if (playerID != SteamUser.GetSteamID()) // Don't create a clone for yourself
+                if (playerID != SteamUser.GetSteamID()) // dont clone yourself
                 {
                     if (!instance.remotePlayers.Exists(p => p.GetSteamID() == playerID))
                     {
@@ -89,6 +87,7 @@ namespace Multiplayer.Steam
 
         public static void OnP2PSessionRequest(P2PSessionRequest_t request)
         {
+            // forces p2p connection without sending a packet back
             CSteamID friendID = request.m_steamIDRemote;
             SteamNetworking.AcceptP2PSessionWithUser(friendID);
         }

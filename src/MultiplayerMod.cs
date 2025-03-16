@@ -214,6 +214,9 @@ namespace Multiplayer
 
             if (Input.GetKeyDown(KeyCode.F3))
             {
+                if (player == null)
+                    return;
+
                 Color randomColor = new Color(Random.value, Random.value, Random.value);
                 player.SetColor(randomColor);
 
