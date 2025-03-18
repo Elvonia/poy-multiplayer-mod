@@ -23,7 +23,7 @@ namespace Multiplayer.Steam
                 case EChatMemberStateChange.k_EChatMemberStateChangeEntered:
 
                     // add player to remotePlayers list
-                    PlayerClone playerClone = new PlayerClone(friendID, instance.playerShadow);
+                    PlayerClone playerClone = new PlayerClone(friendID, instance.shadowClone);
                     playerClone.DestroyPlayerGameObject();
 
                     instance.remotePlayers.Add(playerClone);
@@ -77,7 +77,7 @@ namespace Multiplayer.Steam
                 {
                     if (!instance.remotePlayers.Exists(p => p.GetSteamID() == playerID))
                     {
-                        PlayerClone playerClone = new PlayerClone(playerID, instance.playerShadow);
+                        PlayerClone playerClone = new PlayerClone(playerID, instance.shadowClone);
                         instance.remotePlayers.Add(playerClone);
                         LogManager.Debug($"Added {playerID} to remotePlayers");
                     }

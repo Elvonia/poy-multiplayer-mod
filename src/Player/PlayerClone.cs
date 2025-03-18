@@ -2,6 +2,7 @@
 using Steamworks;
 using System.IO;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Multiplayer
 {
@@ -43,6 +44,7 @@ namespace Multiplayer
 
         private Color color;
         private int sceneIndex;
+        private string playerName;
 
 
         public PlayerClone(CSteamID steamID, GameObject shadow)
@@ -120,6 +122,11 @@ namespace Multiplayer
             return player;
         }
 
+        public string GetPlayerName()
+        {
+            return playerName;
+        }
+
         public int GetSceneIndex()
         {
             return sceneIndex;
@@ -168,6 +175,11 @@ namespace Multiplayer
                 renderer.material = new Material(Shader.Find("Standard"));
                 renderer.material.color = color;
             }
+        }
+
+        public void SetPlayerName(string playerName)
+        {
+            this.playerName = playerName;
         }
 
         public void SetSceneIndex(int sceneIndex)

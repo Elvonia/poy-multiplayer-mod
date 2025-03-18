@@ -1,6 +1,4 @@
-﻿using Multiplayer.Logger;
-using Multiplayer.Steam;
-using Steamworks;
+﻿using Steamworks;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;

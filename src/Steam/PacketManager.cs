@@ -1,7 +1,6 @@
 ﻿using Multiplayer.Logger;
 using Steamworks;
 using System.IO;
-using System.Numerics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -174,7 +173,6 @@ namespace Multiplayer.Steam
             }
         }
 
-        // check if playerClone is null as it throws errors prior to creation
         public void ReceivePositionUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
         {
             PlayerClone playerClone = instance.remotePlayers.Find(s => s.GetSteamID() == senderID);
@@ -221,7 +219,7 @@ namespace Multiplayer.Steam
                     if (sceneIndex == -1)
                         return;
 
-                    playerClone.CreatePlayerGameObject(instance.playerShadow);
+                    playerClone.CreatePlayerGameObject(instance.shadowClone);
                     playerClone.SetSceneIndex(sceneIndex);
 
                     LogManager.Debug($"Same scene detected for player {senderID}");

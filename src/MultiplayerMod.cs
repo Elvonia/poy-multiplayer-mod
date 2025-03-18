@@ -99,7 +99,7 @@ namespace Multiplayer
         public CSteamID currentLobbyID;
 
         public Player player;
-        public GameObject playerShadow;
+        public GameObject shadowClone;
 
         public MultiplayerUI lobbyUI;
         public PacketManager packetManager;
@@ -113,7 +113,7 @@ namespace Multiplayer
                 return;
             }
 
-            StealPlayerShadow();
+            ShadowClone.StealPlayerShadow(this);
 
             Callback<GameLobbyJoinRequested_t>.Create((callback) => Callbacks.OnFriendJoined(callback, this));
             Callback<LobbyChatUpdate_t>.Create((callback) => Callbacks.OnLobbyChatUpdated(callback, this));
@@ -169,7 +169,7 @@ namespace Multiplayer
 
                 if (buildIndex == playerClone.GetSceneIndex())
                 {
-                    playerClone.CreatePlayerGameObject(playerShadow);
+                    playerClone.CreatePlayerGameObject(shadowClone);
                     LogManager.Debug($"Rebuilding player object for user {playerClone.GetSteamID()}");
                 }
             }
@@ -243,54 +243,5 @@ namespace Multiplayer
 
             packetManager.ReceivePackets(this);
         }
-
-        private void OpenSteamFriendsList()
-        {
-            if (currentLobbyID.IsValid())
-            {
-                SteamFriends.ActivateGameOverlayInviteDialog(currentLobbyID);
-                LogManager.Debug("Opened steam friends list");
-            }
-        }
-
-        // move out of main mod
-        #region PlayerShadow Duplication
-        private void StealPlayerShadow()
-        {
-            SceneManager.LoadSceneAsync(2, LoadSceneMode.Additive).completed += (operation) =>
-            {
-                PlayerShadow foundShadow = GameObject.FindObjectOfType<PlayerShadow>();
-
-                if (foundShadow == null)
-                {
-                    UnloadStolenScene();
-                    return;
-                }
-
-                playerShadow = GameObject.Instantiate(foundShadow.gameObject);
-                playerShadow.name = "StolenPlayerShadow";
-
-                GameObject.Destroy(playerShadow.GetComponent<PlayerShadow>());
-                GameObject.DontDestroyOnLoad(playerShadow);
-
-                playerShadow.SetActive(false);
-
-                UnloadStolenScene();
-            };
-        }
-
-        private void UnloadStolenScene()
-        {
-            SceneManager.UnloadSceneAsync(2).completed += (operation) =>
-            {
-                ReloadTitleMenu();
-            };
-        }
-
-        private void ReloadTitleMenu()
-        {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
-        #endregion
     }
 }
