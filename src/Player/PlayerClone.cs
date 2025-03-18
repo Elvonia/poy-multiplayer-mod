@@ -1,6 +1,7 @@
 ﻿using RootMotion.FinalIK;
 using Steamworks;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -44,13 +45,17 @@ namespace Multiplayer
 
         private Color color;
         private int sceneIndex;
+
         private string playerName;
+        private GameObject nameTag;
 
 
         public PlayerClone(CSteamID steamID, GameObject shadow)
         {
             this.steamID = steamID;
-            color = Color.blue;
+            this.playerName = SteamFriends.GetFriendPersonaName(steamID);
+
+            color = Color.white;
 
             if (shadow != null)
                 CreatePlayerGameObject(shadow);
@@ -65,6 +70,24 @@ namespace Multiplayer
             }
         }
 
+        private void CreateNameTag()
+        {
+            nameTag = new GameObject("NameTag");
+            TextMesh textMesh = nameTag.AddComponent<TextMesh>();
+
+            textMesh.text = playerName;
+            textMesh.font = Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(f => f.name == "roman-antique.regular");
+            textMesh.fontSize = 24;
+            textMesh.color = Color.white;
+            textMesh.alignment = TextAlignment.Center;
+
+            nameTag.transform.SetParent(player.transform);
+            nameTag.transform.localPosition = new Vector3(0, 2, 0);
+            nameTag.transform.localRotation = Quaternion.identity;
+
+            nameTag.AddComponent<NameTagLookAt>();
+        }
+
         public void CreatePlayerGameObject(GameObject shadow)
         {
             if (player == null)
@@ -75,6 +98,8 @@ namespace Multiplayer
 
                 position = shadow.transform.position;
                 rotation = shadow.transform.rotation;
+
+                CreateNameTag();
 
                 leftHand = new GameObject("LeftHand");
                 leftHand.transform.SetParent(player.transform);
@@ -120,11 +145,6 @@ namespace Multiplayer
         public GameObject GetPlayer()
         {
             return player;
-        }
-
-        public string GetPlayerName()
-        {
-            return playerName;
         }
 
         public int GetSceneIndex()
@@ -175,11 +195,6 @@ namespace Multiplayer
                 renderer.material = new Material(Shader.Find("Standard"));
                 renderer.material.color = color;
             }
-        }
-
-        public void SetPlayerName(string playerName)
-        {
-            this.playerName = playerName;
         }
 
         public void SetSceneIndex(int sceneIndex)

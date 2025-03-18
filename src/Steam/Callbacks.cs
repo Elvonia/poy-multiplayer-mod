@@ -26,6 +26,10 @@ namespace Multiplayer.Steam
                     PlayerClone playerClone = new PlayerClone(friendID, instance.shadowClone);
                     playerClone.DestroyPlayerGameObject();
 
+                    // send sceneIndex in case you are already in a map
+                    byte[] sceneBytes = instance.packetManager.CreateSceneUpdatePacket(instance.player);
+                    instance.packetManager.SendReliablePacket(instance.currentLobbyID, sceneBytes);
+
                     instance.remotePlayers.Add(playerClone);
                     LogManager.Debug($"Added {friendID} to remotePlayers");
 
