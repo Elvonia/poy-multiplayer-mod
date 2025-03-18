@@ -101,7 +101,7 @@ namespace Multiplayer
         public Player player;
         public GameObject playerShadow;
 
-        public MultiplayerDebugUI debugUI;
+        public MultiplayerUI lobbyUI;
         public PacketManager packetManager;
 
         public List<PlayerClone> remotePlayers = new List<PlayerClone>();
@@ -145,8 +145,8 @@ namespace Multiplayer
 
         public void CommonSceneLoad(int buildIndex)
         {
-            debugUI = new MultiplayerDebugUI();
-            debugUI.UpdateLobbyUI(currentLobbyID);
+            lobbyUI = new MultiplayerUI(buildIndex);
+            lobbyUI.UpdateUI(currentLobbyID);
 
             // Skip cabins as they lack a PlayerShadow on the Player
             if (buildIndex == 0 || buildIndex == 1 
@@ -189,7 +189,7 @@ namespace Multiplayer
                 LogManager.Debug($"Destroyed {remotePlayers.Count} PlayerClones");
             }
 
-            debugUI = null;
+            lobbyUI = null;
             player = null;
         }
 
@@ -197,18 +197,18 @@ namespace Multiplayer
         {
             if (Input.GetKeyDown(KeyCode.F1))
             {
-                OpenSteamFriendsList();
+                UI.Steam.OpenSteamFriendsList(this);
             }
 
             if(Input.GetKeyDown(KeyCode.F2))
             {
-                if (debugUI.active)
+                if (lobbyUI.active)
                 {
-                    debugUI.DisableUI();
+                    lobbyUI.DisableUI();
                 }
                 else
                 {
-                    debugUI.EnableUI();
+                    lobbyUI.EnableUI();
                 }
             }
 

@@ -14,7 +14,7 @@ namespace Multiplayer.Steam
         public static void OnLobbyChatUpdated(LobbyChatUpdate_t callback, MultiplayerMod instance)
         {
             CSteamID friendID = (CSteamID)callback.m_ulSteamIDUserChanged;
-            instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
+            instance.lobbyUI.UpdateUI(instance.currentLobbyID);
 
             EChatMemberStateChange change = (EChatMemberStateChange)callback.m_rgfChatMemberStateChange;
 
@@ -57,14 +57,14 @@ namespace Multiplayer.Steam
             if (callback.m_eResult == EResult.k_EResultOK)
             {
                 instance.currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
-                instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
+                instance.lobbyUI.UpdateUI(instance.currentLobbyID);
             }
         }
 
         public static void OnLobbyJoined(LobbyEnter_t callback, MultiplayerMod instance)
         {
             instance.currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
-            instance.debugUI.UpdateLobbyUI(instance.currentLobbyID);
+            instance.lobbyUI.UpdateUI(instance.currentLobbyID);
 
             int memberCount = SteamMatchmaking.GetNumLobbyMembers(instance.currentLobbyID);
             LogManager.Debug($"{memberCount} existing players detected");
