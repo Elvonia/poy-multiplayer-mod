@@ -48,6 +48,7 @@ namespace Multiplayer
 
         private string playerName;
         private GameObject nameTag;
+        private TextMesh textMesh;
 
 
         public PlayerClone(CSteamID steamID, GameObject shadow)
@@ -73,19 +74,19 @@ namespace Multiplayer
         private void CreateNameTag()
         {
             nameTag = new GameObject("NameTag");
-            TextMesh textMesh = nameTag.AddComponent<TextMesh>();
+            textMesh = nameTag.AddComponent<TextMesh>();
 
             textMesh.text = playerName;
-            textMesh.font = Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(f => f.name == "roman-antique.regular");
-            textMesh.fontSize = 24;
-            textMesh.color = Color.white;
+            textMesh.fontSize = 56;
+            textMesh.characterSize = 0.01f;
+            textMesh.color = color;
+            textMesh.anchor = TextAnchor.MiddleCenter;
             textMesh.alignment = TextAlignment.Center;
 
             nameTag.transform.SetParent(player.transform);
-            nameTag.transform.localPosition = new Vector3(0, 2, 0);
-            nameTag.transform.localRotation = Quaternion.identity;
+            nameTag.transform.localPosition = new Vector3(0, 0.80f, 0);
 
-            nameTag.AddComponent<NameTagLookAt>();
+            nameTag.AddComponent<LookAtPlayer>();
         }
 
         public void CreatePlayerGameObject(GameObject shadow)
@@ -185,10 +186,12 @@ namespace Multiplayer
             }
         }
 
-        public void SetMaterialColor(Color color)
+        public void SetColor(Color color)
         {
-            SkinnedMeshRenderer[] meshRenderers = player.GetComponentsInChildren<SkinnedMeshRenderer>();
+            this.color = color;
+            textMesh.color = color;
 
+            SkinnedMeshRenderer[] meshRenderers = player.GetComponentsInChildren<SkinnedMeshRenderer>();
             foreach (SkinnedMeshRenderer renderer in meshRenderers)
             {
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
@@ -225,7 +228,7 @@ namespace Multiplayer
             leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
             rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
 
-            SetMaterialColor(color);
+            SetColor(color);
         }
     }
 }

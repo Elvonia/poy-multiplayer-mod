@@ -11,7 +11,7 @@ using BepInEx;
 
 namespace Multiplayer
 {
-    [BepInPlugin("com.github.Elvonia.poy-multiplayer-mod", "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin("com.github.Elvonia.poy-multiplayer-mod", "Multiplayer Mod", PluginInfo.PLUGIN_VERSION)]
     public class MultiplayerMod : BaseUnityPlugin 
     {
         public void Awake() 
@@ -50,7 +50,7 @@ namespace Multiplayer
 #elif MELONLOADER
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(Multiplayer.MultiplayerMod), "Multiplayer Mod Test", PluginInfo.PLUGIN_VERSION, "Kalico")]
+[assembly: MelonInfo(typeof(Multiplayer.MultiplayerMod), "Multiplayer Mod", PluginInfo.PLUGIN_VERSION, "Kalico")]
 [assembly: MelonGame("TraipseWare", "Peaks of Yore")]
 
 namespace Multiplayer
@@ -233,15 +233,18 @@ namespace Multiplayer
 
         public void CommonFixedUpdate()
         {
-            if (player != null)
+            if (remotePlayers.Count > 0)
             {
-                player.UpdatePlayer();
+                packetManager.ReceivePackets(this);
 
-                byte[] positionPacket = packetManager.CreatePositionUpdatePacket(player);
-                packetManager.SendUnreliableNoDelayPacket(currentLobbyID, positionPacket);
+                if (player != null)
+                {
+                    player.UpdatePlayer();
+
+                    byte[] positionPacket = packetManager.CreatePositionUpdatePacket(player);
+                    packetManager.SendUnreliableNoDelayPacket(currentLobbyID, positionPacket);
+                }
             }
-
-            packetManager.ReceivePackets(this);
         }
     }
 }

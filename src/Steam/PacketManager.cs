@@ -1,6 +1,7 @@
 ﻿using Multiplayer.Logger;
 using Steamworks;
 using System.IO;
+using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -131,6 +132,15 @@ namespace Multiplayer.Steam
                             //LogManager.Debug($"PlayerPositionUpdate of size {buffer.Length} received from {sender}");
                             break;
 
+                        case (byte)PacketType.PlayerSceneRequest:
+                            if (instance.player != null)
+                            {
+                                byte[] sceneBytes = instance.packetManager.CreateSceneUpdatePacket(instance.player);
+                                instance.packetManager.SendReliablePacket(instance.currentLobbyID, sceneBytes);
+                            }
+
+                            break;
+
                         case (byte)PacketType.PlayerSceneUpdate:
                             ReceiveSceneUpdate(instance, sender, buffer);
 
@@ -166,7 +176,7 @@ namespace Multiplayer.Steam
 
                 if (playerClone != null)
                 {
-                    playerClone.SetMaterialColor(color);
+                    playerClone.SetColor(color);
 
                     LogManager.Debug($"Applied new clone color from packet to {senderID}");
                 }
@@ -256,6 +266,12 @@ namespace Multiplayer.Steam
 
                 // todo
             }
+        }
+
+        public void RequestSceneUpdate(CSteamID friendID)
+        {
+            byte[] packet = new byte[] { (byte)PacketType.PlayerSceneRequest };
+            SteamNetworking.SendP2PPacket(friendID, packet, (uint)packet.Length, EP2PSend.k_EP2PSendReliable);
         }
 
         // ------------------------------------------------------------------------ \\

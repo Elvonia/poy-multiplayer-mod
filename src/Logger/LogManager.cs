@@ -19,7 +19,7 @@ namespace Multiplayer.Logger
 
 #if DEBUG_BEPINEX
         
-        private static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource("Multiplayer Mod Test");
+        private static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource("Multiplayer Mod");
         private static readonly Action<string> logInfo = logger.LogInfo;
         private static readonly Action<string> logWarning = logger.LogWarning;
         private static readonly Action<string> logError = logger.LogError;
@@ -39,7 +39,7 @@ namespace Multiplayer.Logger
 
 #elif DEBUG_MELONLOADER
 
-        private static readonly MelonLogger.Instance logger = new MelonLogger.Instance("Multiplayer Mod Test");
+        private static readonly MelonLogger.Instance logger = new MelonLogger.Instance("Multiplayer Mod");
         private static readonly Action<string> logInfo = logger.Msg;
         private static readonly Action<string> logWarning = logger.Warning;
         private static readonly Action<string> logError = logger.Error;

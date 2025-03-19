@@ -5,6 +5,7 @@
         None,
         PlayerColorUpdate,
         PlayerPositionUpdate,
+        PlayerSceneRequest,
         PlayerSceneUpdate,
         PlayerSitUpdate,
         PlayerSummitedUpdate

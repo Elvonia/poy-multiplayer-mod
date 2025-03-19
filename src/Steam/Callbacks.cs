@@ -26,12 +26,11 @@ namespace Multiplayer.Steam
                     PlayerClone playerClone = new PlayerClone(friendID, instance.shadowClone);
                     playerClone.DestroyPlayerGameObject();
 
-                    // send sceneIndex in case you are already in a map
-                    byte[] sceneBytes = instance.packetManager.CreateSceneUpdatePacket(instance.player);
-                    instance.packetManager.SendReliablePacket(instance.currentLobbyID, sceneBytes);
-
                     instance.remotePlayers.Add(playerClone);
                     LogManager.Debug($"Added {friendID} to remotePlayers");
+
+                    // request scene index
+                    instance.packetManager.RequestSceneUpdate(friendID);
 
                     break;
                 case EChatMemberStateChange.k_EChatMemberStateChangeLeft:
@@ -82,8 +81,12 @@ namespace Multiplayer.Steam
                     if (!instance.remotePlayers.Exists(p => p.GetSteamID() == playerID))
                     {
                         PlayerClone playerClone = new PlayerClone(playerID, instance.shadowClone);
+                        
                         instance.remotePlayers.Add(playerClone);
                         LogManager.Debug($"Added {playerID} to remotePlayers");
+
+                        // request scene index
+                        instance.packetManager.RequestSceneUpdate(playerID);
                     }
                 }
             }

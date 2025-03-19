@@ -2,7 +2,7 @@
 
 namespace Multiplayer
 {
-    public class NameTagLookAt : MonoBehaviour
+    public class LookAtPlayer : MonoBehaviour
     {
         private Camera mainCamera;
 
@@ -15,8 +15,10 @@ namespace Multiplayer
         {
             if (mainCamera != null)
             {
-                transform.LookAt(mainCamera.transform);
-                transform.Rotate(0, 180, 0); // flip the text
+                Vector3 direction = mainCamera.transform.position - transform.position;
+                direction.y = 0;
+
+                transform.rotation = Quaternion.LookRotation(-direction);
             }
         }
     }

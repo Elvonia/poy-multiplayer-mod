@@ -33,7 +33,7 @@ namespace Multiplayer.UI
             
             if (inGameMenu != null)
             {
-                canvas.transform.parent = inGameMenu.inGameMenuObject.transform;
+                canvas.transform.SetParent(inGameMenu.inGameMenuObject.transform);
             }
             else
             {
@@ -74,7 +74,7 @@ namespace Multiplayer.UI
             text.lineSpacing = 3f;
 
             text.rectTransform.anchoredPosition = new Vector2(-40, -40);
-            text.rectTransform.sizeDelta = new Vector2(Screen.width, Screen.height);
+            text.rectTransform.sizeDelta = new Vector2(Screen.width - 40, Screen.height - 40);
 
             UpdateText("Initializing...");
         }
