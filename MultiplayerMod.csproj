@@ -3,7 +3,7 @@
     <TargetFramework>net472</TargetFramework>
     <Platform>Any CPU</Platform>
     <AssemblyName>Multiplayer</AssemblyName>
-    <Version>0.3</Version>
+    <Version>0.2</Version>
     <RootNamespace>Multiplayer</RootNamespace>
     <Configurations>Debug-BepInEx;Release-BepInEx;Debug-MelonLoader;Release-MelonLoader</Configurations>
     <Configuration Condition="'$(Configuration)' == ''">Debug-BepInEx</Configuration>
