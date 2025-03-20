@@ -140,14 +140,10 @@ namespace Multiplayer
 
         public void UpdatePlayer()
         {
+            originShift = Vector3.zero;
+
             if (OriginShift.singleton != null)
-            {
                 originShift = OriginShift.LocalOffset.ToVector3();
-            }
-            else
-            {
-                originShift = Vector3.zero;
-            }
 
             position = player.transform.position + originShift;
             rotation = player.transform.rotation;
