@@ -45,6 +45,7 @@ namespace Multiplayer
 
         private Color color;
         private int sceneIndex;
+        private Vector3 originShift;
 
         private string playerName;
         private GameObject nameTag;
@@ -207,17 +208,26 @@ namespace Multiplayer
 
         public void UpdateTransforms()
         {
-            player.transform.position = position;
+            if (OriginShift.singleton != null)
+            {
+                originShift = OriginShift.LocalOffset.ToVector3();
+            }
+            else
+            {
+                originShift = Vector3.zero;
+            }
+
+            player.transform.position = position - originShift;
             player.transform.rotation = rotation;
 
-            leftHand.transform.position = leftHandPos;
-            rightHand.transform.position = rightHandPos;
+            leftHand.transform.position = leftHandPos - originShift;
+            rightHand.transform.position = rightHandPos - originShift;
 
-            leftFoot.transform.position = leftFootPos;
-            rightFoot.transform.position = rightFootPos;
+            leftFoot.transform.position = leftFootPos - originShift;
+            rightFoot.transform.position = rightFootPos - originShift;
 
-            leftFootBend.transform.position = leftFootBendPos;
-            rightFootBend.transform.position = rightFootBendPos;
+            leftFootBend.transform.position = leftFootBendPos - originShift;
+            rightFootBend.transform.position = rightFootBendPos - originShift;
 
             leftHand.transform.rotation = leftHandRot;
             rightHand.transform.rotation = rightHandRot;

@@ -6,6 +6,10 @@ namespace Multiplayer
     public class Player
     {
         private PlayerShadow player;
+        private Color color;
+
+        private Vector3 originShift;
+        private int sceneIndex;
 
         private Vector3 position;
         private Quaternion rotation;
@@ -24,9 +28,6 @@ namespace Multiplayer
 
         private float leftArmStretch = 1f;
         private float rightArmStretch = 1f;
-
-        private Color color;
-        private int sceneIndex;
 
         public Player()
         {
@@ -139,17 +140,26 @@ namespace Multiplayer
 
         public void UpdatePlayer()
         {
-            position = player.transform.position;
+            if (OriginShift.singleton != null)
+            {
+                originShift = OriginShift.LocalOffset.ToVector3();
+            }
+            else
+            {
+                originShift = Vector3.zero;
+            }
+
+            position = player.transform.position + originShift;
             rotation = player.transform.rotation;
 
-            leftHandPos = player.handIK_L.solver.arm.target.position;
-            rightHandPos = player.handIK_R.solver.arm.target.position;
+            leftHandPos = player.handIK_L.solver.arm.target.position + originShift;
+            rightHandPos = player.handIK_R.solver.arm.target.position + originShift;
 
-            leftFootPos = player.footIK_L.solver.target.position;
-            rightFootPos = player.footIK_R.solver.target.position;
+            leftFootPos = player.footIK_L.solver.target.position + originShift;
+            rightFootPos = player.footIK_R.solver.target.position + originShift;
 
-            leftFootBendPos = player.realleftKnee.transform.position;
-            rightFootBendPos = player.realrightKnee.transform.position;
+            leftFootBendPos = player.realleftKnee.transform.position + originShift;
+            rightFootBendPos = player.realrightKnee.transform.position + originShift;
 
             leftHandRot = player.handIK_L.solver.arm.target.rotation;
             rightHandRot = player.handIK_R.solver.arm.target.rotation;
