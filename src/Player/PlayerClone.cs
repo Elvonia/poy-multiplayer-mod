@@ -40,9 +40,6 @@ namespace Multiplayer
         private Quaternion leftFootRot;
         private Quaternion rightFootRot;
 
-        private float leftArmStretch = 1f;
-        private float rightArmStretch = 1f;
-
         private Color color;
         private int sceneIndex;
         private Vector3 originShift;
@@ -94,6 +91,8 @@ namespace Multiplayer
         {
             if (player == null)
             {
+                originShift = Vector3.zero;
+
                 player = Object.Instantiate(shadow);
                 player.name = $"PlayerClone_{steamID}";
                 player.SetActive(true);
@@ -135,9 +134,6 @@ namespace Multiplayer
 
                 leftFootIK.solver.bendGoal = leftFootBend.transform;
                 rightFootIK.solver.bendGoal = rightFootBend.transform;
-
-                leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
-                rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
 
                 leftHandIK.fixTransforms = true;
                 rightHandIK.fixTransforms = true;
@@ -181,9 +177,6 @@ namespace Multiplayer
 
                 leftFootRot = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                 rightFootRot = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-
-                leftArmStretch = reader.ReadSingle();
-                rightArmStretch = reader.ReadSingle();
             }
         }
 
@@ -208,8 +201,6 @@ namespace Multiplayer
 
         public void UpdateTransforms()
         {
-            originShift = Vector3.zero;
-
             if (OriginShift.singleton != null)
                 originShift = OriginShift.LocalOffset.ToVector3();
 
@@ -230,9 +221,6 @@ namespace Multiplayer
 
             leftFoot.transform.rotation = leftFootRot;
             rightFoot.transform.rotation = rightFootRot;
-
-            leftHandIK.solver.arm.armLengthMlp = leftArmStretch;
-            rightHandIK.solver.arm.armLengthMlp = rightArmStretch;
 
             SetColor(color);
         }

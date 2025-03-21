@@ -145,13 +145,14 @@ namespace Multiplayer
 
         public void CommonSceneLoad(int buildIndex)
         {
-            lobbyUI = new MultiplayerUI(buildIndex);
-            lobbyUI.UpdateUI(currentLobbyID);
+            lobbyUI = new MultiplayerUI(this, buildIndex);
 
             // Skip cabins as they lack a PlayerShadow on the Player
             if (buildIndex == 0 || buildIndex == 1 
                 || buildIndex == 37 || buildIndex == 67)
             {
+                lobbyUI.UpdateUI(currentLobbyID);
+
                 byte[] nullIndexBytes = packetManager.CreateNullSceneUpdatePacket();
                 packetManager.SendReliablePacket(currentLobbyID, nullIndexBytes);
 

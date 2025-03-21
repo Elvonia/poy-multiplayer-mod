@@ -26,12 +26,10 @@ namespace Multiplayer
         private Quaternion leftFootRot;
         private Quaternion rightFootRot;
 
-        private float leftArmStretch = 1f;
-        private float rightArmStretch = 1f;
-
         public Player()
         {
             player = Object.FindObjectOfType<PlayerShadow>();
+            originShift = Vector3.zero;
         }
 
         public byte[] GetColorBytes()
@@ -106,9 +104,6 @@ namespace Multiplayer
                 writer.Write(rightFootRot.z);
                 writer.Write(rightFootRot.w);
 
-                writer.Write(leftArmStretch);
-                writer.Write(rightArmStretch);
-
                 return stream.ToArray();
             }
         }
@@ -140,8 +135,6 @@ namespace Multiplayer
 
         public void UpdatePlayer()
         {
-            originShift = Vector3.zero;
-
             if (OriginShift.singleton != null)
                 originShift = OriginShift.LocalOffset.ToVector3();
 
@@ -162,9 +155,6 @@ namespace Multiplayer
 
             leftFootRot = player.footIK_L.solver.target.rotation;
             rightFootRot = player.footIK_R.solver.target.rotation;
-
-            leftArmStretch = player.handIK_L.solver.arm.armLengthMlp;
-            rightArmStretch = player.handIK_R.solver.arm.armLengthMlp;
         }
     }
 }
