@@ -297,18 +297,13 @@ namespace Multiplayer.UI
 
             Color[] colors = colorNames.Keys.ToArray();
 
-            // Cycle to the next color
             playerColorIndex = (playerColorIndex + 1) % colors.Length;
             playerColor = colors[playerColorIndex];
             string colorName = colorNames[playerColor];
 
-            // Update button text and text color
             Text buttonText = playerColorButton.GetComponentInChildren<Text>();
             buttonText.text = colorName;
             buttonText.color = playerColor;
-
-            // Apply the color to the player
-            instance.player.SetColor(playerColor);
 
             instance.player.SetColor(playerColor);
         }
