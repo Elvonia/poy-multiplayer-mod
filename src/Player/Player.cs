@@ -32,6 +32,11 @@ namespace Multiplayer
             originShift = Vector3.zero;
         }
 
+        public Color GetColor()
+        {
+            return color;
+        }
+
         public byte[] GetColorBytes()
         {
             using (MemoryStream stream = new MemoryStream())

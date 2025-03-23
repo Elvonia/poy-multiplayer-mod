@@ -1,11 +1,10 @@
 ﻿using Multiplayer.Logger;
 using Steamworks;
-using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static MelonLoader.MelonLogger;
 using UButton = UnityEngine.UI.Button;
 
 namespace Multiplayer.UI
@@ -19,6 +18,14 @@ namespace Multiplayer.UI
         private GameObject inGameMenuButtonTemplate;
 
         private UButton buttonTemplate;
+        private UButton lobbyTypeButton;
+        private UButton playerCountButton;
+        private UButton playerColorButton;
+
+        private ELobbyType lobbyType;
+        private int playerCount;
+        private Color playerColor;
+        private int playerColorIndex = 0;
 
         private GameObject multiplayerButton;
         private Text multiplayerButtonText;
@@ -28,7 +35,7 @@ namespace Multiplayer.UI
         private GameObject multiplayerPanel;
         private Text lobbyIdText;
         private Text playerCountText;
-        private Text playerColor;
+        private Text playerColorText;
         //
 
         private GameObject canvasObject;
@@ -52,6 +59,15 @@ namespace Multiplayer.UI
 
             this.instance = instance;
             inGameMenu = GameObject.FindObjectOfType<InGameMenu>();
+
+            string lobbyTypeString = SteamMatchmaking.GetLobbyData(instance.currentLobbyID, "lobby_type");
+            if (!System.Enum.TryParse(lobbyTypeString, out lobbyType))
+            {
+                lobbyType = ELobbyType.k_ELobbyTypeFriendsOnly;
+            }
+
+            playerCount = SteamMatchmaking.GetLobbyMemberLimit(instance.currentLobbyID);
+            playerColor = instance.player.GetColor();
 
             SetupInGameMenuUI();
             active = true;
@@ -149,10 +165,36 @@ namespace Multiplayer.UI
             layout.padding = new RectOffset(60, 60, 60, 60);
 
             AddLabel("Lobby Type:", out lobbyIdText);
-            AddLabel("Max Player Count:", out playerCountText);
-            AddLabel("Player Color:", out playerColor);
 
-            UButton inviteButton = CreateButtonFromTemplate("Invite", "Invite", 72);
+            lobbyTypeButton = CreateButtonFromTemplate("LobbyType", lobbyType.ToString(), 48);
+            lobbyTypeButton.onClick.AddListener(() =>
+            {
+                LogManager.Debug($"Clicked lobby type button");
+                ClickLobbyTypeButton();
+                EventSystem.current.SetSelectedGameObject(null);
+            });
+
+            AddLabel("Max Player Count:", out playerCountText);
+
+            playerCountButton = CreateButtonFromTemplate("PlayerCount", playerCount.ToString(), 48);
+            playerCountButton.onClick.AddListener(() =>
+            {
+                LogManager.Debug($"Clicked player count button");
+                ClickPlayerCountButton();
+                EventSystem.current.SetSelectedGameObject(null);
+            });
+
+            AddLabel("Player Color:", out playerColorText);
+
+            playerColorButton = CreateButtonFromTemplate("PlayerColor", playerColor.ToString(), 48);
+            playerColorButton.onClick.AddListener(() =>
+            {
+                LogManager.Debug($"Clicked player color button");
+                ClickPlayerColorButton();
+                EventSystem.current.SetSelectedGameObject(null);
+            });
+
+            UButton inviteButton = CreateButtonFromTemplate("Invite", "Invite", 64);
             inviteButton.onClick.AddListener(() =>
             {
                 LogManager.Debug($"Clicked invite button");
@@ -160,7 +202,7 @@ namespace Multiplayer.UI
                 EventSystem.current.SetSelectedGameObject(null);
             });
 
-            UButton backButton = CreateButtonFromTemplate("Back", "Back", 96);
+            UButton backButton = CreateButtonFromTemplate("Back", "Back", 76);
             backButton.onClick.AddListener(() =>
             {
                 LogManager.Debug("Closed multiplayer panel");
@@ -168,6 +210,107 @@ namespace Multiplayer.UI
             });
 
             multiplayerPanel.AddComponent<MultiplayerPanelAutoHider>().Init(multiplayerPanel);
+        }
+
+        private void ClickLobbyTypeButton()
+        {
+            if (lobbyType == ELobbyType.k_ELobbyTypeFriendsOnly)
+            {
+                lobbyType = ELobbyType.k_ELobbyTypePrivate;
+
+                Text buttonText = lobbyTypeButton.GetComponentInChildren<Text>();
+                buttonText.text = "Private";
+
+                SteamMatchmaking.SetLobbyType(instance.currentLobbyID, lobbyType);
+                SteamMatchmaking.SetLobbyData(instance.currentLobbyID, "lobby_type", lobbyType.ToString());
+
+                return;
+            }
+
+            if (lobbyType == ELobbyType.k_ELobbyTypePrivate)
+            {
+                lobbyType = ELobbyType.k_ELobbyTypeFriendsOnly;
+
+                Text buttonText = lobbyTypeButton.GetComponentInChildren<Text>();
+                buttonText.text = "Friends Only";
+
+                SteamMatchmaking.SetLobbyType(instance.currentLobbyID, lobbyType);
+                SteamMatchmaking.SetLobbyData(instance.currentLobbyID, "lobby_type", lobbyType.ToString());
+
+                return;
+            }
+        }
+
+        private void ClickPlayerCountButton()
+        {
+            if (playerCount == 4)
+            {
+                playerCount = 8;
+
+                Text buttonText = playerCountButton.GetComponentInChildren<Text>();
+                buttonText.text = playerCount.ToString();
+
+                SteamMatchmaking.SetLobbyMemberLimit(instance.currentLobbyID, playerCount);
+
+                return;
+            }
+
+            if (playerCount == 8)
+            {
+                playerCount = 12;
+
+                Text buttonText = playerCountButton.GetComponentInChildren<Text>();
+                buttonText.text = playerCount.ToString();
+
+                SteamMatchmaking.SetLobbyMemberLimit(instance.currentLobbyID, playerCount);
+
+                return;
+            }
+
+            if (playerCount == 12)
+            {
+                playerCount = 4;
+
+                Text buttonText = playerCountButton.GetComponentInChildren<Text>();
+                buttonText.text = playerCount.ToString();
+
+                SteamMatchmaking.SetLobbyMemberLimit(instance.currentLobbyID, playerCount);
+
+                return;
+            }
+        }
+
+        private void ClickPlayerColorButton()
+        {
+            Dictionary<Color, string> colorNames = new Dictionary<Color, string>()
+            {
+                { Color.white, "White" },
+                { Color.black, "Black" },
+                { Color.red, "Red" },
+                { Color.green, "Green" },
+                { Color.blue, "Blue" },
+                { Color.yellow, "Yellow" },
+                { Color.cyan, "Cyan" },
+                { Color.magenta, "Magenta" },
+                { Color.grey, "Grey" }
+            };
+
+            Color[] colors = colorNames.Keys.ToArray();
+
+            // Cycle to the next color
+            playerColorIndex = (playerColorIndex + 1) % colors.Length;
+            playerColor = colors[playerColorIndex];
+            string colorName = colorNames[playerColor];
+
+            // Update button text and text color
+            Text buttonText = playerColorButton.GetComponentInChildren<Text>();
+            buttonText.text = colorName;
+            buttonText.color = playerColor;
+
+            // Apply the color to the player
+            instance.player.SetColor(playerColor);
+
+            instance.player.SetColor(playerColor);
         }
 
         private UButton CreateButtonFromTemplate(string name, string text, int fontSize)
@@ -203,7 +346,7 @@ namespace Multiplayer.UI
             Text text = go.GetComponent<Text>();
             text.text = prefix + " ";
             text.font = multiplayerButtonText.font;
-            text.fontSize = 48;
+            text.fontSize = 64;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.lineSpacing = 3f;
