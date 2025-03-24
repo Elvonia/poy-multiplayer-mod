@@ -3,9 +3,16 @@ using UnityEngine.SceneManagement;
 
 namespace Multiplayer
 {
-    public class ShadowClone
+    public static class ShadowClone
     {
-        public static void StealPlayerShadow(MultiplayerMod instance)
+        public static GameObject ShadowCloneObject { get; private set; }
+
+        public static void Initialize()
+        {
+            StealPlayerShadow();
+        }
+
+        public static void StealPlayerShadow()
         {
             SceneManager.LoadSceneAsync(2, LoadSceneMode.Additive).completed += (operation) =>
             {
@@ -17,13 +24,13 @@ namespace Multiplayer
                     return;
                 }
 
-                instance.shadowClone = GameObject.Instantiate(foundShadow.gameObject);
-                instance.shadowClone.name = "StolenPlayerShadow";
+                ShadowCloneObject = GameObject.Instantiate(foundShadow.gameObject);
+                ShadowCloneObject.name = "StolenPlayerShadow";
 
-                GameObject.Destroy(instance.shadowClone.GetComponent<PlayerShadow>());
-                GameObject.DontDestroyOnLoad(instance.shadowClone);
+                GameObject.Destroy(ShadowCloneObject.GetComponent<PlayerShadow>());
+                GameObject.DontDestroyOnLoad(ShadowCloneObject);
 
-                instance.shadowClone.SetActive(false);
+                ShadowCloneObject.SetActive(false);
 
                 UnloadStolenScene();
             };

@@ -3,18 +3,18 @@ using Steamworks;
 
 namespace Multiplayer.Steam
 {
-    public class Callbacks
+    public static class Callbacks
     {
-        public static void OnFriendJoined(GameLobbyJoinRequested_t callback, MultiplayerMod instance)
+        public static void OnFriendJoined(GameLobbyJoinRequested_t callback)
         {
-            instance.currentLobbyID = callback.m_steamIDLobby;
-            SteamMatchmaking.JoinLobby(instance.currentLobbyID);
+            LobbyManager.LobbyID = callback.m_steamIDLobby;
+            SteamMatchmaking.JoinLobby(LobbyManager.LobbyID);
         }
 
-        public static void OnLobbyChatUpdated(LobbyChatUpdate_t callback, MultiplayerMod instance)
+        public static void OnLobbyChatUpdated(LobbyChatUpdate_t callback)
         {
             CSteamID friendID = (CSteamID)callback.m_ulSteamIDUserChanged;
-            instance.lobbyUI.UpdateUI(instance.currentLobbyID);
+            //instance.lobbyUI.UpdateUI(instance.currentLobbyID);
 
             EChatMemberStateChange change = (EChatMemberStateChange)callback.m_rgfChatMemberStateChange;
 
@@ -23,14 +23,14 @@ namespace Multiplayer.Steam
                 case EChatMemberStateChange.k_EChatMemberStateChangeEntered:
 
                     // add player to remotePlayers list
-                    PlayerClone playerClone = new PlayerClone(friendID, instance.shadowClone);
+                    PlayerClone playerClone = new PlayerClone(friendID, ShadowClone.ShadowCloneObject);
                     playerClone.DestroyPlayerGameObject();
 
-                    instance.remotePlayers.Add(playerClone);
+                    LobbyManager.RemotePlayers.Add(playerClone);
                     LogManager.Debug($"Added {friendID} to remotePlayers");
 
                     // request scene index
-                    instance.packetManager.RequestSceneUpdate(friendID);
+                    PacketManager.RequestSceneUpdate(friendID);
 
                     break;
                 case EChatMemberStateChange.k_EChatMemberStateChangeLeft:
@@ -39,12 +39,12 @@ namespace Multiplayer.Steam
                 case EChatMemberStateChange.k_EChatMemberStateChangeBanned:
 
                     // remove player from remotePlayers list
-                    foreach(PlayerClone player in instance.remotePlayers)
+                    foreach(PlayerClone player in LobbyManager.RemotePlayers)
                     {
                         if (player.GetSteamID() == friendID)
                         {
                             player.DestroyPlayerGameObject();
-                            instance.remotePlayers.Remove(player);
+                            LobbyManager.RemotePlayers.Remove(player);
 
                             LogManager.Debug($"Removed {friendID} from remotePlayers");
                             break;
@@ -55,38 +55,38 @@ namespace Multiplayer.Steam
             }
         }
 
-        public static void OnLobbyCreated(LobbyCreated_t callback, MultiplayerMod instance)
+        public static void OnLobbyCreated(LobbyCreated_t callback)
         {
             if (callback.m_eResult == EResult.k_EResultOK)
             {
-                instance.currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
-                instance.lobbyUI.UpdateUI(instance.currentLobbyID);
+                LobbyManager.LobbyID = new CSteamID(callback.m_ulSteamIDLobby);
+                //instance.lobbyUI.UpdateUI(instance.currentLobbyID);
             }
         }
 
-        public static void OnLobbyJoined(LobbyEnter_t callback, MultiplayerMod instance)
+        public static void OnLobbyJoined(LobbyEnter_t callback)
         {
-            instance.currentLobbyID = new CSteamID(callback.m_ulSteamIDLobby);
-            instance.lobbyUI.UpdateUI(instance.currentLobbyID);
+            LobbyManager.LobbyID = new CSteamID(callback.m_ulSteamIDLobby);
+            //instance.lobbyUI.UpdateUI(instance.currentLobbyID);
 
-            int memberCount = SteamMatchmaking.GetNumLobbyMembers(instance.currentLobbyID);
+            int memberCount = SteamMatchmaking.GetNumLobbyMembers(LobbyManager.LobbyID);
             LogManager.Debug($"{memberCount} existing players detected");
 
             for (int i = 0; i < memberCount; i++)
             {
-                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(instance.currentLobbyID, i);
+                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(LobbyManager.LobbyID, i);
 
                 if (playerID != SteamUser.GetSteamID()) // dont clone yourself
                 {
-                    if (!instance.remotePlayers.Exists(p => p.GetSteamID() == playerID))
+                    if (!LobbyManager.RemotePlayers.Exists(p => p.GetSteamID() == playerID))
                     {
-                        PlayerClone playerClone = new PlayerClone(playerID, instance.shadowClone);
-                        
-                        instance.remotePlayers.Add(playerClone);
+                        PlayerClone playerClone = new PlayerClone(playerID, ShadowClone.ShadowCloneObject);
+
+                        LobbyManager.RemotePlayers.Add(playerClone);
                         LogManager.Debug($"Added {playerID} to remotePlayers");
 
                         // request scene index
-                        instance.packetManager.RequestSceneUpdate(playerID);
+                        PacketManager.RequestSceneUpdate(playerID);
                     }
                 }
             }

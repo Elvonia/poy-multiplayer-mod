@@ -1,4 +1,5 @@
 ﻿using Multiplayer.Logger;
+using Multiplayer.Steam;
 using Steamworks;
 
 namespace Multiplayer.UI
@@ -8,9 +9,9 @@ namespace Multiplayer.UI
         // handle friends list
         public static void OpenSteamFriendsList(MultiplayerMod instance)
         {
-            if (instance.currentLobbyID.IsValid())
+            if (LobbyManager.LobbyID.IsValid())
             {
-                SteamFriends.ActivateGameOverlayInviteDialog(instance.currentLobbyID);
+                SteamFriends.ActivateGameOverlayInviteDialog(LobbyManager.LobbyID);
                 LogManager.Debug("Opened steam friends list");
             }
         }

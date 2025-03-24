@@ -1,4 +1,5 @@
 ﻿using Multiplayer.Logger;
+using Multiplayer.Steam;
 using Steamworks;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,13 +61,13 @@ namespace Multiplayer.UI
             this.instance = instance;
             inGameMenu = GameObject.FindObjectOfType<InGameMenu>();
 
-            string lobbyTypeString = SteamMatchmaking.GetLobbyData(instance.currentLobbyID, "lobby_type");
+            string lobbyTypeString = SteamMatchmaking.GetLobbyData(LobbyManager.LobbyID, "lobby_type");
             if (!System.Enum.TryParse(lobbyTypeString, out lobbyType))
             {
                 lobbyType = ELobbyType.k_ELobbyTypeFriendsOnly;
             }
 
-            playerCount = SteamMatchmaking.GetLobbyMemberLimit(instance.currentLobbyID);
+            playerCount = SteamMatchmaking.GetLobbyMemberLimit(LobbyManager.LobbyID);
             playerColor = instance.player.GetColor();
 
             SetupInGameMenuUI();
@@ -198,7 +199,7 @@ namespace Multiplayer.UI
             inviteButton.onClick.AddListener(() =>
             {
                 LogManager.Debug($"Clicked invite button");
-                SteamFriends.ActivateGameOverlayInviteDialog(instance.currentLobbyID);
+                SteamFriends.ActivateGameOverlayInviteDialog(LobbyManager.LobbyID);
                 EventSystem.current.SetSelectedGameObject(null);
             });
 
@@ -221,8 +222,8 @@ namespace Multiplayer.UI
                 Text buttonText = lobbyTypeButton.GetComponentInChildren<Text>();
                 buttonText.text = "Private";
 
-                SteamMatchmaking.SetLobbyType(instance.currentLobbyID, lobbyType);
-                SteamMatchmaking.SetLobbyData(instance.currentLobbyID, "lobby_type", lobbyType.ToString());
+                SteamMatchmaking.SetLobbyType(LobbyManager.LobbyID, lobbyType);
+                SteamMatchmaking.SetLobbyData(LobbyManager.LobbyID, "lobby_type", lobbyType.ToString());
 
                 return;
             }
@@ -234,8 +235,8 @@ namespace Multiplayer.UI
                 Text buttonText = lobbyTypeButton.GetComponentInChildren<Text>();
                 buttonText.text = "Friends Only";
 
-                SteamMatchmaking.SetLobbyType(instance.currentLobbyID, lobbyType);
-                SteamMatchmaking.SetLobbyData(instance.currentLobbyID, "lobby_type", lobbyType.ToString());
+                SteamMatchmaking.SetLobbyType(LobbyManager.LobbyID, lobbyType);
+                SteamMatchmaking.SetLobbyData(LobbyManager.LobbyID, "lobby_type", lobbyType.ToString());
 
                 return;
             }
@@ -250,7 +251,7 @@ namespace Multiplayer.UI
                 Text buttonText = playerCountButton.GetComponentInChildren<Text>();
                 buttonText.text = playerCount.ToString();
 
-                SteamMatchmaking.SetLobbyMemberLimit(instance.currentLobbyID, playerCount);
+                SteamMatchmaking.SetLobbyMemberLimit(LobbyManager.LobbyID, playerCount);
 
                 return;
             }
@@ -262,7 +263,7 @@ namespace Multiplayer.UI
                 Text buttonText = playerCountButton.GetComponentInChildren<Text>();
                 buttonText.text = playerCount.ToString();
 
-                SteamMatchmaking.SetLobbyMemberLimit(instance.currentLobbyID, playerCount);
+                SteamMatchmaking.SetLobbyMemberLimit(LobbyManager.LobbyID, playerCount);
 
                 return;
             }
@@ -274,7 +275,7 @@ namespace Multiplayer.UI
                 Text buttonText = playerCountButton.GetComponentInChildren<Text>();
                 buttonText.text = playerCount.ToString();
 
-                SteamMatchmaking.SetLobbyMemberLimit(instance.currentLobbyID, playerCount);
+                SteamMatchmaking.SetLobbyMemberLimit(LobbyManager.LobbyID, playerCount);
 
                 return;
             }
@@ -374,14 +375,14 @@ namespace Multiplayer.UI
             UpdateText("Initializing...");
         }
 
-        public void UpdateUI(CSteamID lobbyID)
+        public void UpdateUI()
         {
-            int playerCount = SteamMatchmaking.GetNumLobbyMembers(lobbyID);
-            string playerList = $"Lobby ID: {lobbyID}\nPlayers: {playerCount}\n";
+            int playerCount = SteamMatchmaking.GetNumLobbyMembers(LobbyManager.LobbyID);
+            string playerList = $"Lobby ID: {LobbyManager.LobbyID}\nPlayers: {playerCount}\n";
 
             for (int i = 0; i < playerCount; i++)
             {
-                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
+                CSteamID playerID = SteamMatchmaking.GetLobbyMemberByIndex(LobbyManager.LobbyID, i);
                 string playerName = SteamFriends.GetFriendPersonaName(playerID);
                 playerList += $"{playerName}\n";
             }

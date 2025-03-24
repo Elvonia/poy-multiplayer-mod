@@ -66,12 +66,12 @@ namespace Multiplayer
         {
             if (SteamNetworking.IsP2PPacketAvailable(out _))
             {
-                SteamNetworking.CloseP2PSessionWithUser(currentLobbyID);
+                SteamNetworking.CloseP2PSessionWithUser(LobbyManager.LobbyID);
             }
 
-            if (currentLobbyID.IsValid())
+            if (LobbyManager.LobbyID.IsValid())
             {
-                SteamMatchmaking.LeaveLobby(currentLobbyID);
+                SteamMatchmaking.LeaveLobby(LobbyManager.LobbyID);
             }
         }
 
@@ -96,15 +96,8 @@ namespace Multiplayer
         }
 #endif
 
-        public CSteamID currentLobbyID;
-
         public Player player;
-        public GameObject shadowClone;
-
         public MultiplayerUI lobbyUI;
-        public PacketManager packetManager;
-
-        public List<PlayerClone> remotePlayers = new List<PlayerClone>();
 
         public void CommonAwake()
         {
@@ -113,33 +106,21 @@ namespace Multiplayer
                 return;
             }
 
-            ShadowClone.StealPlayerShadow(this);
+            LobbyManager.Initialize();
+            LobbyManager.CreateLobby();
 
-            Callback<GameLobbyJoinRequested_t>.Create((callback) => Callbacks.OnFriendJoined(callback, this));
-            Callback<LobbyChatUpdate_t>.Create((callback) => Callbacks.OnLobbyChatUpdated(callback, this));
-            Callback<LobbyCreated_t>.Create((callback) => Callbacks.OnLobbyCreated(callback, this));
-            Callback<LobbyEnter_t>.Create((callback) => Callbacks.OnLobbyJoined(callback, this));
-            Callback<P2PSessionRequest_t>.Create((callback) => Callbacks.OnP2PSessionRequest(callback));
-
-            // Move to UI to select lobby type + player count
-            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, 4);
-
-            packetManager = new PacketManager();
+            ShadowClone.Initialize();
         }
 
         public void CommonDestroy()
         {
             // Close P2P + Lobby to prevent application hang
-            foreach (PlayerClone player in remotePlayers)
+            foreach (PlayerClone player in LobbyManager.RemotePlayers)
             {
                 SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
             }
 
-            if (currentLobbyID.IsValid())
-            {
-                SteamMatchmaking.LeaveLobby(currentLobbyID);
-            }
-
+            LobbyManager.LeaveLobby();
             SteamAPI.Shutdown();
         }
 
@@ -150,10 +131,10 @@ namespace Multiplayer
                 || buildIndex == 37 || buildIndex == 67)
             {
                 lobbyUI = new MultiplayerUI(this, buildIndex);
-                lobbyUI.UpdateUI(currentLobbyID);
+                lobbyUI.UpdateUI();
 
-                byte[] nullIndexBytes = packetManager.CreateNullSceneUpdatePacket();
-                packetManager.SendReliablePacket(currentLobbyID, nullIndexBytes);
+                byte[] nullIndexBytes = PacketManager.CreateNullSceneUpdatePacket();
+                PacketManager.SendReliablePacket(nullIndexBytes);
 
                 LogManager.Debug("Broadcasting null scene update packet");
 
@@ -164,30 +145,30 @@ namespace Multiplayer
             player.SetScene(buildIndex);
             lobbyUI = new MultiplayerUI(this, buildIndex);
 
-            foreach (PlayerClone playerClone in remotePlayers)
+            foreach (PlayerClone playerClone in LobbyManager.RemotePlayers)
             {
                 LogManager.Debug($"Checking remote player {playerClone.GetSteamID()} scene index");
 
                 if (buildIndex == playerClone.GetSceneIndex())
                 {
-                    playerClone.CreatePlayerGameObject(shadowClone);
+                    playerClone.CreatePlayerGameObject(ShadowClone.ShadowCloneObject);
                     LogManager.Debug($"Rebuilding player object for user {playerClone.GetSteamID()}");
                 }
             }
 
-            byte[] sceneUpdatePacket = packetManager.CreateSceneUpdatePacket(player);
-            packetManager.SendReliablePacket(currentLobbyID, sceneUpdatePacket);
+            byte[] sceneUpdatePacket = PacketManager.CreateSceneUpdatePacket(player);
+            PacketManager.SendReliablePacket(sceneUpdatePacket);
 
             LogManager.Debug("Broadcasting scene update packet");
         }
 
         public void CommonSceneUnload()
         {
-            foreach (PlayerClone player in remotePlayers)
+            foreach (PlayerClone player in LobbyManager.RemotePlayers)
             {
-                //SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
+                SteamNetworking.CloseP2PSessionWithUser(player.GetSteamID());
                 player.DestroyPlayerGameObject();
-                LogManager.Debug($"Destroyed {remotePlayers.Count} PlayerClones");
+                LogManager.Debug($"Destroyed {LobbyManager.RemotePlayers.Count} PlayerClones");
             }
 
             lobbyUI = null;
@@ -221,8 +202,8 @@ namespace Multiplayer
                 Color randomColor = new Color(Random.value, Random.value, Random.value);
                 player.SetColor(randomColor);
 
-                byte[] colorPacket = packetManager.CreateColorUpdatePacket(player);
-                packetManager.SendReliablePacket(currentLobbyID, colorPacket);
+                byte[] colorPacket = PacketManager.CreateColorUpdatePacket(player);
+                PacketManager.SendReliablePacket(colorPacket);
 
                 LogManager.Debug("Setting random player color - " +
                                     $"R:{randomColor.r} " +
@@ -234,16 +215,16 @@ namespace Multiplayer
 
         public void CommonFixedUpdate()
         {
-            if (remotePlayers.Count > 0)
+            if (LobbyManager.RemotePlayers.Count > 0)
             {
-                packetManager.ReceivePackets(this);
+                PacketManager.ReceivePackets(this);
 
                 if (player != null)
                 {
                     player.UpdatePlayer();
 
-                    byte[] positionPacket = packetManager.CreatePositionUpdatePacket(player);
-                    packetManager.SendUnreliableNoDelayPacket(currentLobbyID, positionPacket);
+                    byte[] positionPacket = PacketManager.CreatePositionUpdatePacket(player);
+                    PacketManager.SendUnreliableNoDelayPacket(positionPacket);
                 }
             }
         }

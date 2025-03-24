@@ -1,21 +1,20 @@
 ﻿using Multiplayer.Logger;
 using Steamworks;
 using System.IO;
-using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Multiplayer.Steam
 {
-    public class PacketManager
+    public static class PacketManager
     {
-        private void BroadcastPacket(CSteamID lobbyID, byte[] packet, EP2PSend sendType)
+        private static void BroadcastPacket(byte[] packet, EP2PSend sendType)
         {
-            int memberCount = SteamMatchmaking.GetNumLobbyMembers(lobbyID);
+            int memberCount = SteamMatchmaking.GetNumLobbyMembers(LobbyManager.LobbyID);
 
             for (int i = 0; i < memberCount; i++)
             {
-                CSteamID playerSteamID = SteamMatchmaking.GetLobbyMemberByIndex(lobbyID, i);
+                CSteamID playerSteamID = SteamMatchmaking.GetLobbyMemberByIndex(LobbyManager.LobbyID, i);
 
                 if (playerSteamID == SteamUser.GetSteamID())
                     continue;
@@ -26,7 +25,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public byte[] CreateColorUpdatePacket(Player player)
+        public static byte[] CreateColorUpdatePacket(Player player)
         {
             byte[] colorData = player.GetColorBytes();
 
@@ -40,7 +39,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public byte[] CreatePositionUpdatePacket(Player player)
+        public static byte[] CreatePositionUpdatePacket(Player player)
         {
             byte[] positionData = player.GetPositionBytes();
 
@@ -54,7 +53,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public byte[] CreateSceneUpdatePacket(Player player)
+        public static byte[] CreateSceneUpdatePacket(Player player)
         {
             byte[] sceneData = player.GetSceneBytes();
 
@@ -68,7 +67,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public byte[] CreateSitUpdatePacket(Player player)
+        public static byte[] CreateSitUpdatePacket()
         {
             using (MemoryStream stream = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(stream))
@@ -79,7 +78,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public byte[] CreateSummitedUpdatePacket(Player player)
+        public static byte[] CreateSummitedUpdatePacket()
         {
             using (MemoryStream stream = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(stream))
@@ -90,7 +89,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public byte[] CreateNullSceneUpdatePacket()
+        public static byte[] CreateNullSceneUpdatePacket()
         {
             int i = -1;
 
@@ -104,7 +103,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void ReceivePackets(MultiplayerMod instance)
+        public static void ReceivePackets(MultiplayerMod instance)
         {
             uint msgSize;
             while (SteamNetworking.IsP2PPacketAvailable(out msgSize))
@@ -121,13 +120,13 @@ namespace Multiplayer.Steam
                     switch (buffer[0])
                     {
                         case (byte)PacketType.PlayerColorUpdate:
-                            ReceiveColorUpdate(instance, sender, buffer);
+                            ReceiveColorUpdate(sender, buffer);
 
                             LogManager.Debug($"PlayerColorUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerPositionUpdate:
-                            ReceivePositionUpdate(instance, sender, buffer);
+                            ReceivePositionUpdate(sender, buffer);
 
                             //LogManager.Debug($"PlayerPositionUpdate of size {buffer.Length} received from {sender}");
                             break;
@@ -135,26 +134,26 @@ namespace Multiplayer.Steam
                         case (byte)PacketType.PlayerSceneRequest:
                             if (instance.player != null)
                             {
-                                byte[] sceneBytes = instance.packetManager.CreateSceneUpdatePacket(instance.player);
-                                instance.packetManager.SendReliablePacket(instance.currentLobbyID, sceneBytes);
+                                byte[] sceneBytes = CreateSceneUpdatePacket(instance.player);
+                                SendReliablePacket(sceneBytes);
                             }
 
                             break;
 
                         case (byte)PacketType.PlayerSceneUpdate:
-                            ReceiveSceneUpdate(instance, sender, buffer);
+                            ReceiveSceneUpdate(sender, buffer);
 
                             LogManager.Debug($"PlayerSceneUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerSitUpdate:
-                            ReceiveSitUpdate(instance, sender, buffer);
+                            ReceiveSitUpdate(sender, buffer);
 
                             LogManager.Debug($"PlayerSitUpdate of size {buffer.Length} received from {sender}");
                             break;
 
                         case (byte)PacketType.PlayerSummitedUpdate:
-                            ReceiveSummitedUpdate(instance, sender, buffer);
+                            ReceiveSummitedUpdate(sender, buffer);
 
                             LogManager.Debug($"PlayerSummitedUpdate of size {buffer.Length} received from {sender}");
                             break;
@@ -164,9 +163,9 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void ReceiveColorUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
+        public static void ReceiveColorUpdate(CSteamID senderID, byte[] packet)
         {
-            PlayerClone playerClone = instance.remotePlayers.Find(s => s.GetSteamID() == senderID);
+            PlayerClone playerClone = LobbyManager.RemotePlayers.Find(s => s.GetSteamID() == senderID);
 
             using (MemoryStream stream = new MemoryStream(packet))
             using (BinaryReader reader = new BinaryReader(stream))
@@ -183,9 +182,9 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void ReceivePositionUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
+        public static void ReceivePositionUpdate(CSteamID senderID, byte[] packet)
         {
-            PlayerClone playerClone = instance.remotePlayers.Find(s => s.GetSteamID() == senderID);
+            PlayerClone playerClone = LobbyManager.RemotePlayers.Find(s => s.GetSteamID() == senderID);
 
             using (MemoryStream stream = new MemoryStream(packet))
             using (BinaryReader reader = new BinaryReader(stream))
@@ -209,9 +208,9 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void ReceiveSceneUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
+        public static void ReceiveSceneUpdate(CSteamID senderID, byte[] packet)
         {
-            PlayerClone playerClone = instance.remotePlayers.Find(s => s.GetSteamID() == senderID);
+            PlayerClone playerClone = LobbyManager.RemotePlayers.Find(s => s.GetSteamID() == senderID);
 
             using (MemoryStream stream = new MemoryStream(packet))
             using (BinaryReader reader = new BinaryReader(stream))
@@ -229,7 +228,7 @@ namespace Multiplayer.Steam
                     if (sceneIndex == -1)
                         return;
 
-                    playerClone.CreatePlayerGameObject(instance.shadowClone);
+                    playerClone.CreatePlayerGameObject(ShadowClone.ShadowCloneObject);
                     playerClone.SetSceneIndex(sceneIndex);
 
                     LogManager.Debug($"Same scene detected for player {senderID}");
@@ -244,7 +243,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void ReceiveSitUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
+        public static void ReceiveSitUpdate(CSteamID senderID, byte[] packet)
         {
             using (MemoryStream stream = new MemoryStream(packet))
             using (BinaryReader reader = new BinaryReader(stream))
@@ -256,7 +255,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void ReceiveSummitedUpdate(MultiplayerMod instance, CSteamID senderID, byte[] packet)
+        public static void ReceiveSummitedUpdate(CSteamID senderID, byte[] packet)
         {
             using (MemoryStream stream = new MemoryStream(packet))
             using (BinaryReader reader = new BinaryReader(stream))
@@ -268,7 +267,7 @@ namespace Multiplayer.Steam
             }
         }
 
-        public void RequestSceneUpdate(CSteamID friendID)
+        public static void RequestSceneUpdate(CSteamID friendID)
         {
             byte[] packet = new byte[] { (byte)PacketType.PlayerSceneRequest };
             SteamNetworking.SendP2PPacket(friendID, packet, (uint)packet.Length, EP2PSend.k_EP2PSendReliable);
@@ -285,14 +284,14 @@ namespace Multiplayer.Steam
         // k_EP2PSendUnreliableNoDelay      - no ensured delivery + low latency     \\
         // ------------------------------------------------------------------------ \\
 
-        public void SendReliablePacket(CSteamID lobbyID, byte[] packet)
+        public static void SendReliablePacket(byte[] packet)
         {
-            BroadcastPacket(lobbyID, packet, EP2PSend.k_EP2PSendReliable);
+            BroadcastPacket(packet, EP2PSend.k_EP2PSendReliable);
         }
 
-        public void SendUnreliableNoDelayPacket(CSteamID lobbyID, byte[] packet)
+        public static void SendUnreliableNoDelayPacket(byte[] packet)
         {
-            BroadcastPacket(lobbyID, packet, EP2PSend.k_EP2PSendUnreliableNoDelay);
+            BroadcastPacket(packet, EP2PSend.k_EP2PSendUnreliableNoDelay);
         }
     }
 }
