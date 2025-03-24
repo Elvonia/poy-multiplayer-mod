@@ -46,8 +46,22 @@ namespace Multiplayer.Steam
             LobbyID = CSteamID.Nil;
         }
 
-        public static void UpdateLobby()
+        public static void RestartLobby()
         {
+            if (!IsInLobby)
+                return;
+
+            SteamMatchmaking.LeaveLobby(LobbyID);
+            LobbyID = CSteamID.Nil;
+
+            SteamMatchmaking.CreateLobby(LobbyType, MaxPlayers);
+        }
+
+        public static void UpdateLobby(ELobbyType lobbyType, int maxPlayers)
+        {
+            LobbyType = lobbyType;
+            MaxPlayers = maxPlayers;
+
             SteamMatchmaking.SetLobbyType(LobbyID, LobbyType);
             SteamMatchmaking.SetLobbyMemberLimit(LobbyID, MaxPlayers);
         }

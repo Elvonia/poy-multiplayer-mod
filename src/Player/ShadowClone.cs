@@ -5,7 +5,7 @@ namespace Multiplayer
 {
     public static class ShadowClone
     {
-        public static GameObject ShadowCloneObject { get; private set; }
+        public static GameObject ShadowObject { get; private set; }
 
         public static void Initialize()
         {
@@ -24,13 +24,13 @@ namespace Multiplayer
                     return;
                 }
 
-                ShadowCloneObject = GameObject.Instantiate(foundShadow.gameObject);
-                ShadowCloneObject.name = "StolenPlayerShadow";
+                ShadowObject = GameObject.Instantiate(foundShadow.gameObject);
+                ShadowObject.name = "StolenPlayerShadow";
 
-                GameObject.Destroy(ShadowCloneObject.GetComponent<PlayerShadow>());
-                GameObject.DontDestroyOnLoad(ShadowCloneObject);
+                GameObject.Destroy(ShadowObject.GetComponent<PlayerShadow>());
+                GameObject.DontDestroyOnLoad(ShadowObject);
 
-                ShadowCloneObject.SetActive(false);
+                ShadowObject.SetActive(false);
 
                 UnloadStolenScene();
             };

@@ -5,6 +5,8 @@ namespace Multiplayer.Steam
 {
     public static class Callbacks
     {
+        // move remote player logic out of callbacks
+
         public static void OnFriendJoined(GameLobbyJoinRequested_t callback)
         {
             LobbyManager.LobbyID = callback.m_steamIDLobby;
@@ -23,7 +25,7 @@ namespace Multiplayer.Steam
                 case EChatMemberStateChange.k_EChatMemberStateChangeEntered:
 
                     // add player to remotePlayers list
-                    PlayerClone playerClone = new PlayerClone(friendID, ShadowClone.ShadowCloneObject);
+                    PlayerClone playerClone = new PlayerClone(friendID, ShadowClone.ShadowObject);
                     playerClone.DestroyPlayerGameObject();
 
                     LobbyManager.RemotePlayers.Add(playerClone);
@@ -80,7 +82,7 @@ namespace Multiplayer.Steam
                 {
                     if (!LobbyManager.RemotePlayers.Exists(p => p.GetSteamID() == playerID))
                     {
-                        PlayerClone playerClone = new PlayerClone(playerID, ShadowClone.ShadowCloneObject);
+                        PlayerClone playerClone = new PlayerClone(playerID, ShadowClone.ShadowObject);
 
                         LobbyManager.RemotePlayers.Add(playerClone);
                         LogManager.Debug($"Added {playerID} to remotePlayers");

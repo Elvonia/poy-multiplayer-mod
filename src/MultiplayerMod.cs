@@ -151,7 +151,7 @@ namespace Multiplayer
 
                 if (buildIndex == playerClone.GetSceneIndex())
                 {
-                    playerClone.CreatePlayerGameObject(ShadowClone.ShadowCloneObject);
+                    playerClone.CreatePlayerGameObject(ShadowClone.ShadowObject);
                     LogManager.Debug($"Rebuilding player object for user {playerClone.GetSteamID()}");
                 }
             }

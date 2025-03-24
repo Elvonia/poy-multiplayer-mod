@@ -228,7 +228,7 @@ namespace Multiplayer.Steam
                     if (sceneIndex == -1)
                         return;
 
-                    playerClone.CreatePlayerGameObject(ShadowClone.ShadowCloneObject);
+                    playerClone.CreatePlayerGameObject(ShadowClone.ShadowObject);
                     playerClone.SetSceneIndex(sceneIndex);
 
                     LogManager.Debug($"Same scene detected for player {senderID}");
