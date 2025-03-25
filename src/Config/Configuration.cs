@@ -1,39 +1,46 @@
-﻿using MelonLoader;
-using MelonLoader.Utils;
-using System.Drawing;
+﻿using System.Drawing;
 using System.IO;
 
 #if BEPINEX
 
+using BepInEx;
+
 #elif MELONLOADER
+
+using MelonLoader;
+using MelonLoader.Utils;
 
 #endif
 
 namespace Multiplayer.Config
 {
-    public class Configuration
+    public static class Configuration
     {
-        public string LobbyName;
-        public string LobbyPassword;
+        public static string LobbyName;
+        public static string LobbyPassword;
 
-        public string LobbyType;
-        public int MaxPlayers;
-        
-        public Color PlayerColor;
+        public static string LobbyType;
+        public static int MaxPlayers;
 
-#if MELONLOADER
+        public static Color PlayerColor;
 
-        MelonPreferences_Category multiplayerCategory;
+#if BEPINEX
 
-        MelonPreferences_Entry<string> lobbyNamePref;
-        MelonPreferences_Entry<string> lobbyPasswordPref;
 
-        MelonPreferences_Entry<string> lobbyTypePref;
-        MelonPreferences_Entry<int> maxPlayersPref;
 
-        MelonPreferences_Entry<Color> playerColorPref;
+#elif MELONLOADER            
 
-        public Configuration()
+        private static MelonPreferences_Category multiplayerCategory;
+
+        private static MelonPreferences_Entry<string> lobbyNamePref;
+        private static MelonPreferences_Entry<string> lobbyPasswordPref;
+
+        private static MelonPreferences_Entry<string> lobbyTypePref;
+        private static MelonPreferences_Entry<int> maxPlayersPref;
+
+        private static MelonPreferences_Entry<Color> playerColorPref;
+
+        public static void Initialize()
         {
             string configPath = Path.Combine(MelonEnvironment.UserDataDirectory, "com.github.Elvonia.poy-multiplayer-mod.cfg");
 
@@ -49,6 +56,34 @@ namespace Multiplayer.Config
             playerColorPref = multiplayerCategory.CreateEntry<Color>("PlayerColor", Color.Empty);
         }
 
+
+        public static void LoadConfig()
+        {
+            multiplayerCategory.LoadFromFile();
+
+            LobbyName = lobbyNamePref.Value;
+            LobbyPassword = lobbyPasswordPref.Value;
+
+            LobbyType = lobbyTypePref.Value;
+            MaxPlayers = maxPlayersPref.Value;
+
+            PlayerColor = playerColorPref.Value;
+        }
+
+        public static void SaveConfig()
+        {
+            lobbyNamePref.Value = LobbyName;
+            lobbyPasswordPref.Value = LobbyPassword;
+
+            lobbyTypePref.Value = LobbyType;
+            maxPlayersPref.Value = MaxPlayers;
+
+            playerColorPref.Value = PlayerColor;
+
+            multiplayerCategory.SaveToFile();
+        }
+
 #endif
+
     }
 }
