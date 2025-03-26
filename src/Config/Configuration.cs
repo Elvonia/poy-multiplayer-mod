@@ -3,7 +3,7 @@ using System.IO;
 
 #if BEPINEX
 
-using BepInEx;
+using BepInEx.Configuration;
 
 #elif MELONLOADER
 
@@ -26,7 +26,13 @@ namespace Multiplayer.Config
 
 #if BEPINEX
 
+        public static ConfigEntry<string> lobbyNameEntry;
+        public static ConfigEntry<string> lobbyPasswordEntry;
 
+        public static ConfigEntry<string> lobbyTypeEntry;
+        public static ConfigEntry<int> maxPlayersEntry;
+
+        public static ConfigEntry<Color> playerColorEntry;
 
 #elif MELONLOADER            
 
@@ -54,10 +60,13 @@ namespace Multiplayer.Config
             maxPlayersPref = multiplayerCategory.CreateEntry<int>("MaxPlayers", 0);
 
             playerColorPref = multiplayerCategory.CreateEntry<Color>("PlayerColor", Color.Empty);
+
+            if (File.Exists(configPath))
+                LoadConfig();
         }
 
 
-        public static void LoadConfig()
+        private static void LoadConfig()
         {
             multiplayerCategory.LoadFromFile();
 
